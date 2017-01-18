@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 #coding=utf-8
+#author Derek Anderson
+#interpreter v0.1.1
 
 import random
 
