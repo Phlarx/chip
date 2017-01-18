@@ -1,0 +1,11 @@
+# Todo list
+- [x] Write initial version of interpreter
+- [x] Write language specification
+- [ ] Write documentation for compiler/interpreter/what-cha-ma-call-it
+- [ ] Use each element in at least one sample spec
+- [ ] Better names/documentation for sample specs
+- [ ] Optimize value invalidation for stack control and similar
+- [ ] Detangle the mess that is the compiler (i.e. make it not shite)
+- [ ] Add multiple levels of verbosity? Perhaps a more detailed printout of internal state?
+- [ ] Do some form of testing, besides basic manual tests
+- [ ] Implement shebang support (i.e. get the compiler to ignore it)
