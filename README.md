@@ -24,7 +24,7 @@ A Chip circuit made up of elements found here:
 | `┤<`       |   | wire; tee connecting all but east; first form is (U+2524)
 | `┴^`       |   | wire; tee connecting all but south; first form is (U+2534)
 | `┘'`       |   | wire; connect north and west; first form is (U+2518)
-| `└``       |   | wire; connect north and east; first form is (U+2514)
+| `` └` ``   |   | wire; connect north and east; first form is (U+2514)
 | `┐.`       |   | wire; connect south and west; first form is (U+2510)
 | `┌,`       |   | wire; connect south and east; first form is (U+250C)
 |            |   |
