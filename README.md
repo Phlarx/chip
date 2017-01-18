@@ -17,14 +17,14 @@ A Chip circuit made up of elements found here:
 |            |   |
 | `┼+`       |   | wire; connect on all sides; first form is (U+253C)
 | `─-`       |   | wire; horizontal connect only; first form is (U+2500)
-| `│\|`      |   | wire; vertical connect only; first form is (U+2502); other elements marked with * also connect north/south like this wire
+| `│|`       |   | wire; vertical connect only; first form is (U+2502); other elements marked with * also connect north/south like this wire
 | `×x`       |   | wire; crossing, north connects to south, and west to east; first form is (U+00D7)
 | `┬v`       |   | wire; tee connecting all but north; first form is (U+252C)
 | `├>`       |   | wire; tee connecting all but west; first form is (U+251C)
 | `┤<`       |   | wire; tee connecting all but east; first form is (U+2524)
 | `┴^`       |   | wire; tee connecting all but south; first form is (U+2534)
 | `┘'`       |   | wire; connect north and west; first form is (U+2518)
-| `└\``      |   | wire; connect north and east; first form is (U+2514)
+| `└``       |   | wire; connect north and east; first form is (U+2514)
 | `┐.`       |   | wire; connect south and west; first form is (U+2510)
 | `┌,`       |   | wire; connect south and east; first form is (U+250C)
 |            |   |
@@ -44,7 +44,7 @@ A Chip circuit made up of elements found here:
 | `{`        | * | xor; horizontally mirrored of above
 |            |   |
 | `/`        | * | switch; when north/south is high, west is connected to east as a wire, disconnected otherwise
-| `\\`       | * | switch; when north/south is low, west connected to east as a wire, disconnected otherwise
+| `\`        | * | switch; when north/south is low, west connected to east as a wire, disconnected otherwise
 |            |   |
 | `#`        |   | half-adder; west and north inputs, east is result, south is carry
 |            |   |
