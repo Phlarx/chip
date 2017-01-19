@@ -9,3 +9,4 @@
 - [ ] Add multiple levels of verbosity? Perhaps a more detailed printout of internal state?
 - [ ] Do some form of testing, besides basic manual tests
 - [ ] Implement shebang support (i.e. get the compiler to ignore it)
+- [ ] Allow stdin to be defined from positional file argument (but not stdout?)
