@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 #coding=utf-8
 #author Derek Anderson
-#interpreter v0.1.1
+#interpreter v0.1.2
 
 from sys import argv, stdin, stdout, stderr, exit
 from getopt import getopt, GetoptError
@@ -13,6 +13,7 @@ DEFAULT_VALUE = bytes([0])
 IGNORE_EOF = False
 NEWLINE = False
 VERBOSE = False
+WITHOUT_STDIN = False
 
 def init():
 	"""Perform initialization tasks"""
@@ -20,22 +21,25 @@ def init():
 	global IGNORE_EOF
 	global NEWLINE
 	global VERBOSE
+	global WITHOUT_STDIN
 
 	def version_callback(option, opt, value, parser):
 		parser.print_version()
 		exit(0)
 
-	parser = OptionParser(usage='Usage: %prog [-hnovz] <chipspec>', version='%prog 0.1.1', conflict_handler='resolve')
+	parser = OptionParser(usage='Usage: %prog [-hnovVwz] <chipspec>', version='%prog 0.1.2', conflict_handler='resolve')
 	parser.add_option('-n', '--extra-newline', action='store_true', dest='extra_newline', default=False, help='provides an extra newline to STDOUT at the end of execution, regardless of the method of termination')
 	parser.add_option('-o', '--ignore-eof-ones', action='store_true', dest='ignore_eof_o', default=False, help='when input is exhausted, instead of terminating, provides one values (0xff) until the circuit terminates itself')
 	parser.add_option('-v', '--verbose', action='store_true', dest='verbose', default=False, help='enables verbose output; shows the parsed circuitry and input/output for each cycle')
 	parser.add_option('-V', '--version', action='callback', callback=version_callback, help="show interpreter's version number and exit")
+	parser.add_option('-w', '--without-stdin', action='store_true', dest='without', default=False, help='the program uses the default value (set by -z or -o), instead of reading from STDIN. By itself, implies -z')
 	parser.add_option('-z', '--ignore-eof', action='store_true', dest='ignore_eof_z', default=False, help='when input is exhausted, instead of terminating, provides zero values (0x00) until the circuit terminates itself')
 	opts, args = parser.parse_args()
 
 	IGNORE_EOF = opts.ignore_eof_z or opts.ignore_eof_o
 	NEWLINE = opts.extra_newline
 	VERBOSE = opts.verbose
+	WITHOUT_STDIN = opts.without
 
 	if opts.ignore_eof_o:
 		DEFAULT_VALUE = bytes([255])
@@ -155,13 +159,16 @@ def run(circuit):
 		while True:
 			# Read input, plus eof check
 			if not (status & chiplib.Board.READ_HOLD):
-				inchar = stdin.buffer.read(1)
-				if len(inchar) == 0:
-					# EOF
-					if IGNORE_EOF:
-						inchar = DEFAULT_VALUE
-					else:
-						break
+				if WITHOUT_STDIN:
+					inchar = DEFAULT_VALUE
+				else:
+					inchar = stdin.buffer.read(1)
+					if len(inchar) == 0:
+						# EOF
+						if IGNORE_EOF:
+							inchar = DEFAULT_VALUE
+						else:
+							break
 			inbin = bin(ord(inchar))[2:]
 			inbits = list(map(int, '0'*(8-len(inbin)) + inbin))[::-1]
 			if VERBOSE:

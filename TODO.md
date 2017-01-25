@@ -10,3 +10,4 @@
 - [ ] Do some form of testing, besides basic manual tests
 - [ ] Implement shebang support (i.e. get the compiler to ignore it)
 - [ ] Allow stdin to be defined from positional file argument (but not stdout?)
+- [x] Add flag for execution without stdin, really only useful with -o or -z

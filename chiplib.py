@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 #coding=utf-8
 #author Derek Anderson
-#interpreter v0.1.1
+#interpreter v0.1.2
 
 import random
 
@@ -112,7 +112,7 @@ class Board(object):
 	def readBit(self, index):
 		return self.inbits[index]
 	def writeBit(self, index, value):
-		self.outbits[index] = value
+		self.outbits[index] |= value
 
 	def addStatus(self, statuscode):
 		self.statuscode |= statuscode
