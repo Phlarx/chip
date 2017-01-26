@@ -152,7 +152,7 @@ def setup(ospec):
 def run(circuit):
 	"""Run the circuit for each input byte"""
 	if VERBOSE:
-		stderr.write('        ABCDEFGH        abcdefgh\n')
+		stderr.write('        HGFEDCBA        hgfedcba\n')
 	status = 0
 	inchar = DEFAULT_VALUE
 	try:
@@ -177,7 +177,7 @@ def run(circuit):
 						inc = '�'
 					else:
 						inc = inchar.decode('utf-8', 'replace')
-					stderr.write('     %s\t%s  →' % (inc, ''.join(map(str, inbits))))
+					stderr.write('     %s\t%s  →' % (inc, ''.join(map(str, inbits[::-1]))))
 				else:
 					stderr.write('                  →')
 	
@@ -192,7 +192,7 @@ def run(circuit):
 						outc = '�'
 					else:
 						outc = outchar.decode('utf-8', 'replace')
-					stderr.write('  %s\t%s\n' % (outc, ''.join(map(str, outbits))))
+					stderr.write('  %s\t%s\n' % (outc, ''.join(map(str, outbits[::-1]))))
 				else:
 					stderr.write('\n')
 			if not (status & chiplib.Board.WRITE_HOLD):
