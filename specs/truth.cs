@@ -1,2 +1,3 @@
 e*f
-aAs
+aA~t
+ s
