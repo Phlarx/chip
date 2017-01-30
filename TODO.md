@@ -11,3 +11,6 @@
 - [ ] Implement shebang support (i.e. get the compiler to ignore it)
 - [ ] Allow stdin to be defined from positional file argument (but not stdout?)
 - [x] Add flag for execution without stdin, really only useful with -o or -z
+- [ ] Allow arbitrary default values, via --ignore-eof-XX, where XX is 2 digits hexadecimal
+- [ ] BUG: empty spec is an error, but because of index error -- clean error, or allow empties
+- [ ] Add a delay mechanism? How? Options are read from stack, different delay per side, something else?
