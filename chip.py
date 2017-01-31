@@ -48,7 +48,11 @@ def init():
 
 	if len(args) == 1:
 		with open(args[0], 'r') as f:
-			return ''.join(f.readlines())
+			arr = f.readlines()
+			if arr[0].startswith("#!"):
+				# Its a shebang, probably. Remove the whole line.
+				arr = arr[1:]
+			return ''.join(arr)
 	else:
 		parser.print_help()
 		exit(2)

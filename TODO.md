@@ -8,7 +8,7 @@
 - [ ] Detangle the mess that is the compiler (i.e. make it not shite)
 - [ ] Add multiple levels of verbosity? Perhaps a more detailed printout of internal state?
 - [ ] Do some form of testing, besides basic manual tests
-- [ ] Implement shebang support (i.e. get the compiler to ignore it)
+- [x] Implement shebang support (i.e. get the compiler to ignore it)
 - [ ] Allow stdin to be defined from positional file argument (but not stdout?)
 - [x] Add flag for execution without stdin, really only useful with -o or -z
 - [ ] Allow arbitrary default values, via --ignore-eof-XX, where XX is 2 digits hexadecimal
