@@ -14,3 +14,6 @@
 - [ ] Allow arbitrary default values, via --ignore-eof-XX, where XX is 2 digits hexadecimal
 - [ ] BUG: empty spec is an error, but because of index error -- clean error, or allow empties
 - [ ] Add a delay mechanism? How? Options are read from stack, different delay per side, something else?
+- [ ] Implement loop detection
+- [ ] Implement memoization
+- [ ] Implement iterative calls, rather than recursive
