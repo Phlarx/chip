@@ -185,6 +185,6 @@ ab
 ###### T-flipflop; switches out when in is high
 ```text
 ,¬. 
-`M^a
+ZM^a
  A
 ```
