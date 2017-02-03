@@ -12,8 +12,9 @@
 - [ ] Allow stdin to be defined from positional file argument (but not stdout?)
 - [x] Add flag for execution without stdin, really only useful with -o or -z
 - [ ] Allow arbitrary default values, via --ignore-eof-XX, where XX is 2 digits hexadecimal
-- [ ] BUG: empty spec is an error, but because of index error -- clean error, or allow empties
+- [x] BUG: empty spec is an error, but because of index error -- allow empties
 - [ ] Add a delay mechanism? How? Options are read from stack, different delay per side, something else?
-- [ ] Implement loop detection
-- [ ] Implement memoization
+- [ ] Implement loop detection during cycle execution
+- [ ] Implement memoization during cycle execution
 - [ ] Implement iterative calls, rather than recursive
+- [ ] Add debugging elements (X for examine?)

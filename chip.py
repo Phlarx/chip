@@ -105,12 +105,12 @@ def setup(ospec):
 			layertail = True
 		else:
 			layertail = False
-	if spec[0] == '=':
+	if len(spec) > 0 and spec[0] == '=':
 		spec = spec[1:]
 	spec = '\n'.join(spec)
 
 	# Convert to final layout
-	spec2 = list(map(lambda s:s[(1 if s[0] == '\n' else None):(-1 if s[-1] == '\n' else None)], spec.split('=')))
+	spec2 = list(map(lambda s: s.strip('\n'), spec.split('=')))
 	n = max(map(lambda s:s.count('\n'), spec2))
 	spec2 = list(map(lambda s:(s+('\n'*(n-s.count('\n')))).split('\n'), spec2))
 	n = max(map(lambda s:max(map(len, s)), spec2))
