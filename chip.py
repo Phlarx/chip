@@ -110,7 +110,7 @@ def setup(ospec):
 	spec = '\n'.join(spec)
 
 	# Convert to final layout
-	spec2 = list(map(lambda s: s[(1 if s[0] == '\n' else None):].rstrip('\n'), spec.split('=')))
+	spec2 = list(map(lambda s: s[(1 if len(s) > 0 and s[0] == '\n' else None):].rstrip('\n'), spec.split('=')))
 	n = max(map(lambda s:s.count('\n'), spec2))
 	spec2 = list(map(lambda s:(s+('\n'*(n-s.count('\n')))).split('\n'), spec2))
 	n = max(map(lambda s:max(map(len, s)), spec2))
