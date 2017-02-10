@@ -49,7 +49,7 @@ def init():
 	if len(args) == 1:
 		with open(args[0], 'r') as f:
 			arr = f.readlines()
-			if arr[0].startswith("#!"):
+			if len(arr) > 0 and arr[0].startswith("#!"):
 				# Its a shebang, probably. Remove the whole line.
 				arr = arr[1:]
 			return ''.join(arr)
@@ -110,7 +110,7 @@ def setup(ospec):
 	spec = '\n'.join(spec)
 
 	# Convert to final layout
-	spec2 = list(map(lambda s: s.strip('\n'), spec.split('=')))
+	spec2 = list(map(lambda s: s[(1 if s[0] == '\n' else None):].rstrip('\n'), spec.split('=')))
 	n = max(map(lambda s:s.count('\n'), spec2))
 	spec2 = list(map(lambda s:(s+('\n'*(n-s.count('\n')))).split('\n'), spec2))
 	n = max(map(lambda s:max(map(len, s)), spec2))
