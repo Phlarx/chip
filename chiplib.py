@@ -54,6 +54,7 @@ class Board(object):
 		self.stackctl = {'w':set(), 'r':set()}
 		self.stack = []
 		self.age = 0
+		self.debug = ''
 
 		def processStackWrite():
 			if self.getStackControl('w'):
@@ -94,6 +95,7 @@ class Board(object):
 		self.stackctl['w'].clear()
 		self.stackctl['r'].clear()
 		self.age += 1
+		self.debug = ''
 
 		if not self.stack:
 			# avoid an empty stack by providing a zero value
@@ -107,7 +109,7 @@ class Board(object):
 					# we have a special task function, not an actual element
 					element()
 
-		return (self.statuscode, self.outbits)
+		return (self.statuscode, self.outbits, self.debug)
 
 	def readBit(self, index):
 		return self.inbits[index]
@@ -116,6 +118,8 @@ class Board(object):
 
 	def addStatus(self, statuscode):
 		self.statuscode |= statuscode
+	def addDebug(self, debugMsg):
+		self.debug += str(debugMsg)
 
 	def setStackControl(self, control, controlFlavor, controlValue):
 		if controlValue == 1:
@@ -217,13 +221,23 @@ class Element(object):
 
 class Adder(Element):
 	def __init__(self, board, x, y, z, lexeme):
-		Element.__init__(self, board, x, y, z, '#')
+		self.flavor, lex = self.__class__.getFlavor(lexeme)
+		Element.__init__(self, board, x, y, z, lex)
+
+	@staticmethod
+	def getFlavor(lexeme):
+		if lexeme in '#':
+			return 'ew', '#'
+		elif lexeme in '@':
+			return 'we', '@'
+		else:
+			assert 1 == 0, "'%s' is not a valid lexeme for a %s element" % (lexeme, self.__class__.__name__)
 
 	def poll(self, side):
-		if side == 'e':
-			return self.pollNeighbor('n') ^ self.pollNeighbor('w')
+		if side == self.flavor[0]:
+			return self.pollNeighbor('n') ^ self.pollNeighbor(self.flavor[1])
 		elif side == 's':
-			return self.pollNeighbor('n') and self.pollNeighbor('w')
+			return self.pollNeighbor('n') and self.pollNeighbor(self.flavor[1])
 		else:
 			return 0
 
@@ -272,6 +286,18 @@ class Control(Element):
 				self.board.addStatus(Board.WRITE_HOLD)
 			elif self.lexeme == 's':
 				self.board.addStatus(Board.READ_HOLD)
+
+class Debug(Element):
+	def __init__(self, board, x, y, z, lexeme):
+		Element.__init__(self, board, x, y, z, lexeme)
+		board.registerInternal(self, 90)
+
+	def pollInternal(self):
+		value = self.pollNeighbor('n') or\
+		        self.pollNeighbor('s') or\
+		        self.pollNeighbor('w') or\
+		        self.pollNeighbor('e')
+		self.board.addDebug('\n\t\t\t\t\t%s(%d,%d): %s' % (self.lexeme, self.y, self.x, value))
 
 class Delay(Element):
 	def __init__(self, board, x, y, z, lexeme):
@@ -655,9 +681,10 @@ class Xor(Element):
 ###                     ###
 
 lexmap = {
-		'#': Adder,
+		'@#': Adder,
 		'[]': And,
 		'TtSs': Control,
+		'X': Debug,
 		'Zz': Delay,
 		'«»': Diode,
 		' ': Empty,

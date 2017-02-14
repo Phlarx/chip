@@ -46,7 +46,7 @@ A Chip circuit made up of elements found here:
 | `/`        | * | switch; when north/south is high, west is connected to east as a wire, disconnected otherwise
 | `\`        | * | switch; when north/south is low, west connected to east as a wire, disconnected otherwise
 |            |   |
-| `#`        |   | half-adder; west and north inputs, east is result, south is carry
+| `#@`       |   | half-adder; west and north inputs, east is result, south is carry; `@` is horizontally mirrored
 |            |   |
 | `*`        |   | high constant; transmits in all directions (low constant is unneeded)
 |            |   |
@@ -60,6 +60,7 @@ A Chip circuit made up of elements found here:
 | `t`        |   | same as above, but output DOES occur for the current cycle; shorthand for ZT
 | `S`        |   | skips output for this cycle; allows multiple inputs per output
 | `s`        |   | keep current input for next cycle; allows multiple outputs per input
+| `X`        |   | examines values for debugging, reads signals on all sides (or'ing if necessary), and prints the value to verbose output
 
 # Examples
 These examples are largely limited to 4 bits or less for simplicity. More examples may be found in the specs/ directory, which use all 8 bits.

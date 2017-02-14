@@ -13,9 +13,10 @@
 - [x] Add flag for execution without stdin, really only useful with -o or -z
 - [ ] Allow arbitrary default values, via --ignore-eof XX, where XX is 2 digits hexadecimal
 - [x] BUG: empty spec is an error, but because of index error -- allow empties
-- [ ] Add a delay mechanism? (W for wait?) How? Options are read from stack, different delay per side, something else?
+- [ ] Add a delay mechanism? (W for wait? $ for sleep?) How? Options are read from stack, different delay per side, something else?
 - [ ] Implement loop detection during cycle execution
 - [ ] Implement memoization during cycle execution
 - [ ] Implement iterative calls, rather than recursive
-- [ ] Add debugging elements (X for examine?)
+- [x] Add debugging elements (X for examine?)
 - [x] BUG: empty lines at beginning of layer are trimmed, only valid if empty on all layers
+- [x] Add mirrored adder, perhaps @.

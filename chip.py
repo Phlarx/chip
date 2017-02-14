@@ -61,7 +61,7 @@ def setup(ospec):
 	"""Prepare the circuitry from the text specification"""
 	spec = list(ospec)
 	# Cleanup comments and check symbols
-	charlist = "\n '()*+,-./0123456789<>?ABCDEFGHMOSTZ[\\]^`abcdefghmostvxz{|}~¬⌐÷«»×─│┌┐└┘├┤┬┴┼#"
+	charlist = ''.join(chiplib.lexmap.keys())
 	blockcomment = False
 	layercomment = False
 	for char in range(len(spec)):
@@ -125,10 +125,11 @@ def setup(ospec):
 		"""A generator representing the board's state and function"""
 		outbits = None
 		status = 0
+		debug = ''
 		try:
 			while True:
-				inbits = yield (status, outbits)
-				status, outbits = board.run(inbits)
+				inbits = yield (status, outbits, debug)
+				status, outbits, debug = board.run(inbits)
 		except KeyboardInterrupt as e:
 			if VERBOSE:
 				stderr.write('\n' + str(board))
@@ -186,7 +187,7 @@ def run(circuit):
 					stderr.write('                  →')
 	
 			# Execute a clock cycle
-			status, outbits = circuit.send(inbits)
+			status, outbits, debug = circuit.send(inbits)
 	
 			# Output
 			outchar = bytes([int(''.join(map(str, outbits[::-1])), 2)])
@@ -196,9 +197,12 @@ def run(circuit):
 						outc = '�'
 					else:
 						outc = outchar.decode('utf-8', 'replace')
-					stderr.write('  %s\t%s\n' % (outc, ''.join(map(str, outbits[::-1]))))
+					stderr.write('  %s\t%s' % (outc, ''.join(map(str, outbits[::-1]))))
 				else:
-					stderr.write('\n')
+					stderr.write('             ')
+				if debug:
+					stderr.write('\t%s' % debug)
+				stderr.write('\n')
 			if not (status & chiplib.Board.WRITE_HOLD):
 				stdout.buffer.write(outchar)
 	
