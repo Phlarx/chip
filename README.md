@@ -1,10 +1,19 @@
 # Chip
-Chip is a language that processes streams of bytes in a manner not dissimilar to an integrated circuit. A Chip circuit is a 3-dimensional specification; most computation occurring in 2-dimensions, with pins to allow layers to interact. Each element interacts with its von Neumann neighborhood (that is, no diagonals) according to specific rules, described below.
+Chip is a language that processes streams of bytes in a manner not
+dissimilar to an integrated circuit. A Chip circuit is a
+3-dimensional specification; most computation occurring in
+2-dimensions, with pins to allow layers to interact. Each element
+interacts with its von Neumann neighborhood (that is, no diagonals)
+according to specific rules, described below.
 
-Input is processed, byte by byte, and each byte is split into its component bits. All computation in Chip occurs at the bit level, using elements such as an 'and' gate, a half-adder, and a memory cell. Output is provided by packing the relevant bits back into a byte, and outputting that value.
+Input is processed byte by byte, and each byte is split into its
+component bits. All computation in Chip occurs at the bit level,
+using elements such as an 'and' gate, a half-adder, and a memory
+cell. Output is provided by packing the relevant bits back into a
+byte, and outputting that value.
 
 ## Language specification
-A Chip circuit made up of elements found here:
+A Chip circuit is made up of the elements described here:
 
 | Lexeme     | * | Description
 | --------- | --- | ---
@@ -63,7 +72,9 @@ A Chip circuit made up of elements found here:
 | `X`        |   | examines values for debugging, reads signals on all sides (or'ing if necessary), and prints the value to verbose output
 
 # Examples
-These examples are largely limited to 4 bits or less for simplicity. More examples may be found in the specs/ directory, which use all 8 bits.
+These examples are largely limited to 4 bits or less for simplicity.
+More examples may be found in the specs/ directory, which use all 8
+bits.
 
 ###### Layers and pins (a is A, b and c stay low)
 ```text
@@ -160,8 +171,7 @@ oo('
 
 ###### High on first tick, low after
 ```text
-*Z
-`\a
+*Z~a
 ```
 
 ###### High, then low, then high, then low...
