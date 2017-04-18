@@ -121,6 +121,9 @@ class Board(object):
 	def addDebug(self, debugMsg):
 		self.debug += str(debugMsg)
 
+	def checkStatus(self, statuscode):
+		return self.statuscode & statuscode
+
 	def setStackControl(self, control, controlFlavor, controlValue):
 		if controlValue == 1:
 			self.stackctl[controlFlavor].add(control)
@@ -449,6 +452,9 @@ class OutBit(Element):
 		board.registerInternal(self, 90)
 
 	def pollInternal(self):
+		if self.board.checkStatus(Board.WRITE_HOLD):
+			# Optimization - do not perform OutBit polls when WRITE_HOLD
+			return
 		value = self.pollNeighbor('n') or\
 		        self.pollNeighbor('s') or\
 		        self.pollNeighbor('w') or\

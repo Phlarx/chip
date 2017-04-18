@@ -13,10 +13,12 @@
 - [x] Add flag for execution without stdin, really only useful with -o or -z
 - [ ] Allow arbitrary default values, via --ignore-eof XX, where XX is 2 digits hexadecimal
 - [x] BUG: empty spec is an error, but because of index error -- allow empties
-- [ ] Add a delay mechanism? (W for wait? $ for sleep?) How? Options are read from stack, different delay per side, something else?
+- [ ] Add a delay mechanism? (W for wait? $ for sleep? P for pause?) How? Options are read from stack, different delay per side, something else? All executed together between this cycle and next?
 - [ ] Implement loop detection during cycle execution
 - [ ] Implement memoization during cycle execution
-- [ ] Implement iterative calls, rather than recursive
+- [ ] Implement iterative calls for polling, rather than recursive
 - [x] Add debugging elements (X for examine?)
 - [x] BUG: empty lines at beginning of layer are trimmed, only valid if empty on all layers
-- [x] Add mirrored adder, perhaps @.
+- [x] Add mirrored adder, perhaps @
+- [ ] Add bookmarking/looping, when marker is powered it marks a jump-back point. When unpowered, jumps to that point. Multiple may be used, also, may jump forward if previously jumped back
+- [x] Optimization: In case of output suppression S, skip output bit elements, since they become unnecessary

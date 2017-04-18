@@ -26,14 +26,14 @@ A Chip circuit is made up of the elements described here:
 |            |   |
 | `┼+`       |   | wire; connect on all sides; first form is (U+253C)
 | `─-`       |   | wire; horizontal connect only; first form is (U+2500)
-| `│|`       |   | wire; vertical connect only; first form is (U+2502); other elements marked with * also connect north/south like this wire
+| `│&#124;`  |   | wire; vertical connect only; first form is (U+2502); other elements marked with * also connect north/south like this wire
 | `×x`       |   | wire; crossing, north connects to south, and west to east; first form is (U+00D7)
 | `┬v`       |   | wire; tee connecting all but north; first form is (U+252C)
 | `├>`       |   | wire; tee connecting all but west; first form is (U+251C)
 | `┤<`       |   | wire; tee connecting all but east; first form is (U+2524)
 | `┴^`       |   | wire; tee connecting all but south; first form is (U+2534)
 | `┘'`       |   | wire; connect north and west; first form is (U+2518)
-| `` └` ``   |   | wire; connect north and east; first form is (U+2514)
+| `└&#96;`   |   | wire; connect north and east; first form is (U+2514)
 | `┐.`       |   | wire; connect south and west; first form is (U+2510)
 | `┌,`       |   | wire; connect south and east; first form is (U+250C)
 |            |   |

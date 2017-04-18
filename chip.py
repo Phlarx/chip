@@ -72,7 +72,7 @@ def setup(ospec):
 			spec[char] = ' '
 		elif spec[char] == '=' and (char == 0 or spec[char-1] == '\n'):
 			layercomment = True
-		elif spec[char] == ':':
+		elif (not layercomment) and spec[char] == ':':
 			blockcomment = True
 			spec[char] = ' '
 		elif blockcomment or layercomment:
