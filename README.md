@@ -30,7 +30,7 @@ A Chip circuit is made up of the elements described here:
 | <code>×x</code>       |   | wire; crossing, north connects to south, and west to east; first form is (U+00D7)
 | <code>┬v</code>       |   | wire; tee connecting all but north; first form is (U+252C)
 | <code>├></code>       |   | wire; tee connecting all but west; first form is (U+251C)
-| <code>┤<</code>       |   | wire; tee connecting all but east; first form is (U+2524)
+| <code>┤\<</code>      |   | wire; tee connecting all but east; first form is (U+2524)
 | <code>┴^</code>       |   | wire; tee connecting all but south; first form is (U+2534)
 | <code>┘'</code>       |   | wire; connect north and west; first form is (U+2518)
 | <code>└`</code>       |   | wire; connect north and east; first form is (U+2514)
@@ -53,7 +53,7 @@ A Chip circuit is made up of the elements described here:
 | <code>{</code>        | * | xor; horizontally mirrored of above
 |                       |   |
 | <code>/</code>        | * | switch; when north/south is high, west is connected to east as a wire, disconnected otherwise
-| <code>\</code>        | * | switch; when north/south is low, west connected to east as a wire, disconnected otherwise
+| <code>\\</code>       | * | switch; when north/south is low, west connected to east as a wire, disconnected otherwise
 |                       |   |
 | <code>#@</code>       |   | half-adder; west and north inputs, east is result, south is carry; <code>@</code> is horizontally mirrored
 |                       |   |
