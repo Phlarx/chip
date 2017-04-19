@@ -31,10 +31,22 @@ class Board(object):
 		self.terminals = {}
 	def __str__(self):
 		if self.initialized():
-			top = ' ╔' + '═'*self.w + '╗\n'
-			sep = ' ╠' + '═'*self.w + '╣\n'
-			bot = ' ╚' + '═'*self.w + '╝\n'
-			return top + sep.join(map(lambda a:'\n'.join(map(lambda b:' ║' + ''.join(map(str, b)) + '║', a)) + '\n', self.cboard)) + bot
+			out = ''
+			# Find out how many frames fit in ~100 columns
+			n = 100//(self.w+1)
+			n = 1 if n == 0 else n
+			# Spread the frames evenly across rows
+			n = (self.d+n-1)//n
+			n = (self.d+n-1)//n
+			for chunk in [self.cboard[n*i:n*(i+1)] for i in range((self.d+n-1)//n)]:
+				lines = [' ║']*(self.h+2)
+				lines[0] = ' ╔' + '╦'.join(['═'*self.w]*len(chunk)) + '╗'
+				for layer in chunk:
+					for j in range(self.h):
+						lines[j+1] += ''.join(map(lambda elem: str(elem), layer[j])) + '║'
+				lines[-1] = ' ╚' + '╩'.join(['═'*self.w]*len(chunk)) + '╝'
+				out += '\n'.join(lines) + '\n'
+			return out
 		else:
 			return ''
 	def __repr__(self):
@@ -139,7 +151,7 @@ class Board(object):
 		return self.stack[-1][index]
 	def writeStackBit(self, index, value):
 		assert self.stack, "Tried to write to an empty stack"
-		self.stack[-1][index] = value
+		self.stack[-1][index] |= value
 
 class Element(object):
 	def __init__(self, board, x, y, z, lexeme):
@@ -300,7 +312,7 @@ class Debug(Element):
 		        self.pollNeighbor('s') or\
 		        self.pollNeighbor('w') or\
 		        self.pollNeighbor('e')
-		self.board.addDebug('\n\t\t\t\t\t%s(%d,%d): %s' % (self.lexeme, self.y, self.x, value))
+		self.board.addDebug('\n\t\t\t\t\t%s(%d,%d,%d): %s' % (self.lexeme, self.z, self.y, self.x, value))
 
 class Delay(Element):
 	def __init__(self, board, x, y, z, lexeme):

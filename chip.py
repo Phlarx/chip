@@ -136,9 +136,9 @@ def setup(ospec):
 			stderr.write('\nStack: ')
 			if board.stack:
 				if VERBOSE or len(board.stack) < 9:
-					stderr.write(' '.join(map(lambda v:''.join(map(str, v)), board.stack[::-1])))
+					stderr.write(' '.join(map(lambda v:''.join(map(str, v[::-1])), board.stack[::-1])))
 				else:
-					stderr.write(' '.join(map(lambda v:''.join(map(str, v)), board.stack[:-9:-1])))
+					stderr.write(' '.join(map(lambda v:''.join(map(str, v[::-1])), board.stack[:-9:-1])))
 					stderr.write(' ... ')
 					stderr.write(str(len(board.stack)-8))
 					stderr.write('more')
