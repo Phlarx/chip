@@ -22,3 +22,8 @@
 - [x] Add mirrored adder, perhaps @
 - [ ] Add bookmarking/looping, when marker is powered it marks a jump-back point. When unpowered, jumps to that point. Multiple may be used, also, may jump forward if previously jumped back
 - [x] Optimization: In case of output suppression S, skip output bit elements, since they become unnecessary
+- [ ] Add pulse element, on for first tick, then off after
+- [ ] Maybe: Add edge detector(s), on for only one tick when signal changes
+- [ ] Maybe: Add queue mode instead of stack
+- [ ] Maybe: Add addressed memory instead of stack
+- [ ] Add default values that count up from 0x00 instead of a constant value
