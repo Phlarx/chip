@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 #coding=utf-8
 #author Derek Anderson
-#interpreter v0.1.2
+#interpreter v0.1.3
 
 import random
 
@@ -279,6 +279,27 @@ class And(Element):
 			return self.pollNeighbor('s')
 		elif side == 's':
 			return self.pollNeighbor('n')
+		else:
+			return 0
+
+class Cache(Element):
+	def __init__(self, board, x, y, z, lexeme):
+		Element.__init__(self, board, x, y, z, lexeme)
+		self.age = 0
+		self.currValues = {'n':0, 's':0, 'e':0, 'w':0}
+
+	# Make second flavor 'k' that only polls the opposite neighbor?
+
+	def poll(self, side):
+		if side in self.currValues.keys():
+			if self.age != self.board.age:
+				self.age = self.board.age
+				self.currValues[side] = 0;
+				for dir in self.currValues.keys():
+					if dir == side:
+						continue
+					self.currValues[side] = self.currValues[side] or self.pollNeighbor(dir)
+			return self.currValues[side]
 		else:
 			return 0
 
@@ -701,6 +722,7 @@ class Xor(Element):
 lexmap = {
 		'@#': Adder,
 		'[]': And,
+		'K': Cache,
 		'TtSs': Control,
 		'X': Debug,
 		'Zz': Delay,

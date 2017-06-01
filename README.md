@@ -65,6 +65,8 @@ A Chip circuit is made up of the elements described here:
 | <code>:</code>        |   | block comment start marker; everything read until comment end marker is a comment; stays in comment state past newlines; the newlines are kept, all other characters become empty space
 | <code>;</code>        |   | block comment end marker; error unless paired with comment start marker; comment nesting is not supported
 |                       |   |
+| <code>K</code>        |   | when polled on a side, this element will poll the three other sides, then cache that value until the next cycle; each of the four sides are cached separately; primarily for optimization and performance
+|                       |   |
 | <code>T</code>        |   | terminates exection if powered on any side; output DOES NOT occur for the cycle when termination occurs
 | <code>t</code>        |   | same as above, but output DOES occur for the current cycle; shorthand for ZT
 | <code>S</code>        |   | skips output for this cycle; allows multiple inputs per output

@@ -3,12 +3,10 @@
 
 """ Chip Word
 This script will generate a Chip specification to print out the given
-words. Each byte is encoded by how it differs from the previous byte.
+words. Each bit is encoded as `)` for 1 and `x` for 0.
 """
 
 from sys import argv, stderr
-
-""" Toggle this flag to bias the output in the opposite direction """
 
 if len(argv) == 1:
 	print('Usage: %s <phrase...>\n\n\tphrase\tA phrase (multiple args are joined with space)' % (argv[0]), file=stderr)

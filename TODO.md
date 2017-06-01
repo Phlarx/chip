@@ -12,18 +12,22 @@
 - [ ] Allow stdin to be defined from positional file argument (but not stdout?)
 - [x] Add flag for execution without stdin, really only useful with -o or -z
 - [ ] Allow arbitrary default values, via --ignore-eof XX, where XX is 2 digits hexadecimal
-- [x] BUG: empty spec is an error, but because of index error -- allow empties
+- [ ] Add default values that count up from 0x00 instead of a constant value
 - [ ] Add a delay mechanism? (W for wait? $ for sleep? P for pause?) How? Options are read from stack, different delay per side, something else? All executed together between this cycle and next?
-- [ ] Implement loop detection during cycle execution
-- [ ] Implement memoization during cycle execution
-- [ ] Implement iterative calls for polling, rather than recursive
+- [ ] Implement loop detection during cycle execution; warn to stdout, and return 0 immediately?
+- [ ] Maybe: Implement memoization during cycle execution (can be done manually via cache elements (K))
+- [ ] Optimization: Implement iterative calls for polling, rather than recursive
 - [x] Add debugging elements (X for examine?)
-- [x] BUG: empty lines at beginning of layer are trimmed, only valid if empty on all layers
 - [x] Add mirrored adder, perhaps @
 - [ ] Add bookmarking/looping, when marker is powered it marks a jump-back point. When unpowered, jumps to that point. Multiple may be used, also, may jump forward if previously jumped back
-- [x] Optimization: In case of output suppression S, skip output bit elements, since they become unnecessary
-- [ ] Add pulse element, on for first tick, then off after
-- [ ] Maybe: Add edge detector(s), on for only one tick when signal changes
-- [ ] Maybe: Add queue mode instead of stack
-- [ ] Maybe: Add addressed memory instead of stack
-- [ ] Add default values that count up from 0x00 instead of a constant value
+- [x] Optimization: In case of output suppression S, skip polling output bit elements, since they become unnecessary
+- [ ] Add pulse element (!?), on for first tick of execution, then off for all remaining cycles. For init stuff.
+- [ ] Maybe: Add edge detector(s) (Nn?), on for only one tick when signal changes
+- [ ] Maybe: Add second stack (with unicode numberish elements?)
+- [ ] Maybe: Add queue mode instead of stack mode (two queues? queue+stack?)
+- [ ] Maybe: Add addressed memory mode instead of stack mode (using second stack elements as addressors?)
+- [ ] Add jumpers (jJ?) to connect anywhere within current layer
+- [x] Add caching/once-only elements (Kk?) that only poll neighbors once per cycle
+- [x] BUG: empty spec is an error, but because of index error -- allow empties
+- [x] BUG: empty lines at beginning of layer are trimmed, only valid if empty on all layers
+- [ ] BUG: fix wire loop polling; it is highly inefficient, and sometimes incorrect. May be partially solved by general loop detection

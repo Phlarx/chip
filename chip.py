@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 #coding=utf-8
 #author Derek Anderson
-#interpreter v0.1.2
+#interpreter v0.1.3
 
 from sys import argv, stdin, stdout, stderr, exit
 from getopt import getopt, GetoptError
@@ -27,7 +27,7 @@ def init():
 		parser.print_version()
 		exit(0)
 
-	parser = OptionParser(usage='Usage: %prog [-hnovVwz] <chipspec>', version='%prog 0.1.2', conflict_handler='resolve')
+	parser = OptionParser(usage='Usage: %prog [-hnovVwz] <chipspec>', version='%prog 0.1.3', conflict_handler='resolve')
 	parser.add_option('-n', '--extra-newline', action='store_true', dest='extra_newline', default=False, help='provides an extra newline to STDOUT at the end of execution, regardless of the method of termination')
 	parser.add_option('-o', '--ignore-eof-ones', action='store_true', dest='ignore_eof_o', default=False, help='when input is exhausted, instead of terminating, provides one values (0xff) until the circuit terminates itself')
 	parser.add_option('-v', '--verbose', action='store_true', dest='verbose', default=False, help='enables verbose output; shows the parsed circuitry and input/output for each cycle')
