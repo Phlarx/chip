@@ -4,6 +4,10 @@
 #interpreter v0.1.3
 
 import random
+from collections import defaultdict
+
+# Below, plus some padding should be less than window width
+COLUMNS = 100
 
 oppositeDir = {
 		'n':'s',
@@ -28,12 +32,12 @@ class Board(object):
 
 	def __init__(self):
 		self.cboard = None
-		self.terminals = {}
+		self.terminals = defaultdict(set)
 	def __str__(self):
 		if self.initialized():
 			out = ''
-			# Find out how many frames fit in ~100 columns
-			n = 100//(self.w+1)
+			# Find out how many frames fit in columns
+			n = COLUMNS//(self.w+1)
 			n = 1 if n == 0 else n
 			# Spread the frames evenly across rows
 			n = (self.d+n-1)//n
@@ -77,19 +81,13 @@ class Board(object):
 				# remove current value to bring up the next
 				self.stack.pop()
 
-		if 11 not in self.terminals:
-			self.terminals[11] = set()
-		if 99 not in self.terminals:
-			self.terminals[99] = set()
-		self.terminals[11].add(processStackWrite)
-		self.terminals[99].add(processStackRead)
+		self.registerInternal(processStackWrite, 11)
+		self.registerInternal(processStackRead, 99)
 
 	def initialized(self):
 		return self.cboard is not None
 
 	def registerInternal(self, element, rank):
-		if rank not in self.terminals:
-			self.terminals[rank] = set()
 		self.terminals[rank].add(element)
 
 	def getElement(self, x, y, z):
@@ -119,7 +117,8 @@ class Board(object):
 					element.pollInternal()
 				else:
 					# we have a special task function, not an actual element
-					element()
+					task = element
+					task()
 
 		return (self.statuscode, self.outbits, self.debug)
 
@@ -285,21 +284,21 @@ class And(Element):
 class Cache(Element):
 	def __init__(self, board, x, y, z, lexeme):
 		Element.__init__(self, board, x, y, z, lexeme)
-		self.age = 0
-		self.currValues = {'n':0, 's':0, 'e':0, 'w':0}
+		self.ages = {'n':0, 's':0, 'e':0, 'w':0}
+		self.values = {'n':0, 's':0, 'e':0, 'w':0}
 
-	# Make second flavor 'k' that only polls the opposite neighbor?
+	# Make second flavor 'k' that only polls the opposite neighbor of each side?
 
 	def poll(self, side):
-		if side in self.currValues.keys():
-			if self.age != self.board.age:
-				self.age = self.board.age
-				self.currValues[side] = 0;
-				for dir in self.currValues.keys():
+		if side in self.values.keys():
+			if self.ages[side] != self.board.age:
+				self.ages[side] = self.board.age
+				self.values[side] = 0;
+				for dir in self.values.keys():
 					if dir == side:
 						continue
-					self.currValues[side] = self.currValues[side] or self.pollNeighbor(dir)
-			return self.currValues[side]
+					self.values[side] = self.values[side] or self.pollNeighbor(dir)
+			return self.values[side]
 		else:
 			return 0
 
@@ -361,8 +360,10 @@ class Delay(Element):
 
 	def poll(self, side):
 		if side in ['s', self.flavor[0]]:
-			self.pollInternal()
-			return self.currValue
+			if self.age == self.board.age:
+				return self.currValue
+			else:
+				return self.nextValue
 		else:
 			return 0
 
