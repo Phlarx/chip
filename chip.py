@@ -14,6 +14,7 @@ IGNORE_EOF = False
 NEWLINE = False
 VERBOSE = False
 WITHOUT_STDIN = False
+NO_BUFFER = False
 
 def init():
 	"""Perform initialization tasks"""
@@ -22,12 +23,14 @@ def init():
 	global NEWLINE
 	global VERBOSE
 	global WITHOUT_STDIN
+	global NO_BUFFER
 
 	def version_callback(option, opt, value, parser):
 		parser.print_version()
 		exit(0)
 
 	parser = OptionParser(usage='Usage: %prog [-hnovVwz] <chipspec>', version='%prog 0.1.3', conflict_handler='resolve')
+	parser.add_option('-i', '--immediate', action='store_true', dest='no_buffer', default=False, help='flushes stdout immediately after each cycle, otherwise, default buffering is used')
 	parser.add_option('-n', '--extra-newline', action='store_true', dest='extra_newline', default=False, help='provides an extra newline to STDOUT at the end of execution, regardless of the method of termination')
 	parser.add_option('-o', '--ignore-eof-ones', action='store_true', dest='ignore_eof_o', default=False, help='when input is exhausted, instead of terminating, provides one values (0xff) until the circuit terminates itself')
 	parser.add_option('-v', '--verbose', action='store_true', dest='verbose', default=False, help='enables verbose output; shows the parsed circuitry and input/output for each cycle')
@@ -40,6 +43,7 @@ def init():
 	NEWLINE = opts.extra_newline
 	VERBOSE = opts.verbose
 	WITHOUT_STDIN = opts.without
+	NO_BUFFER = opts.no_buffer
 
 	if opts.ignore_eof_o:
 		DEFAULT_VALUE = bytes([255])
@@ -205,6 +209,8 @@ def run(circuit):
 				stderr.write('\n')
 			if not (status & chiplib.Board.WRITE_HOLD):
 				stdout.buffer.write(outchar)
+				if NO_BUFFER:
+					stdout.flush()
 	
 			# Early termination
 			if (status & chiplib.Board.TERMINATE):

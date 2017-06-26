@@ -308,19 +308,26 @@ class Control(Element):
 		board.registerInternal(self, 80)
 
 	def pollInternal(self):
-		value = self.pollNeighbor('n') or\
-		        self.pollNeighbor('s') or\
-		        self.pollNeighbor('w') or\
-		        self.pollNeighbor('e')
-		if value:
-			if self.lexeme == 'T':
-				self.board.addStatus(Board.WRITE_HOLD | Board.TERMINATE)
-			elif self.lexeme == 't':
-				self.board.addStatus(Board.TERMINATE)
-			elif self.lexeme == 'S':
-				self.board.addStatus(Board.WRITE_HOLD)
-			elif self.lexeme == 's':
-				self.board.addStatus(Board.READ_HOLD)
+		if (   (self.lexeme == 'T' and self.board.checkStatus(Board.WRITE_HOLD) and self.board.checkStatus(Board.TERMINATE))
+		    or (self.lexeme == 't' and self.board.checkStatus(Board.TERMINATE))
+		    or (self.lexeme == 'S' and self.board.checkStatus(Board.WRITE_HOLD))
+		    or (self.lexeme == 's' and self.board.checkStatus(Board.READ_HOLD))):
+			# value already set, no use to poll anything
+			pass
+		else:
+			value = self.pollNeighbor('n') or\
+			        self.pollNeighbor('s') or\
+			        self.pollNeighbor('w') or\
+			        self.pollNeighbor('e')
+			if value:
+				if self.lexeme == 'T':
+					self.board.addStatus(Board.WRITE_HOLD | Board.TERMINATE)
+				elif self.lexeme == 't':
+					self.board.addStatus(Board.TERMINATE)
+				elif self.lexeme == 'S':
+					self.board.addStatus(Board.WRITE_HOLD)
+				elif self.lexeme == 's':
+					self.board.addStatus(Board.READ_HOLD)
 
 class Debug(Element):
 	def __init__(self, board, x, y, z, lexeme):

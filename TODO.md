@@ -22,6 +22,7 @@
 - [ ] Add bookmarking/looping, when marker is powered it marks a jump-back point. When unpowered, jumps to that point. Multiple may be used, also, may jump forward if previously jumped back
 - [x] Optimization: In case of output suppression S, skip polling output bit elements, since they become unnecessary
 - [ ] Add pulse element (!?), on for first tick of execution, then off for all remaining cycles. For init stuff.
+- [ ] Add shift elements, wires that connect diagonally (Ll?), variant 1 connects n-w and s-e, variants 2 connects n-e and s-w
 - [ ] Maybe: Add edge detector(s) (Nn?), on for only one tick when signal changes
 - [ ] Maybe: Add second stack (with unicode numberish elements?)
 - [ ] Maybe: Add queue mode instead of stack mode (two queues? queue+stack?)
@@ -31,3 +32,4 @@
 - [x] BUG: empty spec is an error, but because of index error -- allow empties
 - [x] BUG: empty lines at beginning of layer are trimmed, only valid if empty on all layers
 - [ ] BUG: fix wire loop polling; it is highly inefficient, and sometimes incorrect. May be partially solved by general loop detection
+- [ ] Add command line parameter to terminate generated input after N bytes (-cN)?
