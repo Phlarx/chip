@@ -1,13 +1,14 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 -bb
 #coding=utf-8
 #author Derek Anderson
-#interpreter v0.1.3
+#interpreter v0.1.4
 
-import random
+import random, subprocess
 from collections import defaultdict
 
-# Below, plus some padding should be less than window width
-COLUMNS = 100
+# Window width, minus some for padding
+_rows, _columns = subprocess.check_output(['stty', 'size']).split()
+COLUMNS = int(int(_columns)*0.85)
 
 oppositeDir = {
 		'n':'s',

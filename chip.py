@@ -1,12 +1,13 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 -bb
 #coding=utf-8
 #author Derek Anderson
-#interpreter v0.1.3
+#interpreter v0.1.4
 
 from sys import argv, stdin, stdout, stderr, exit
 from getopt import getopt, GetoptError
 from optparse import OptionParser
 
+import tty, termios
 import chiplib
 
 DEFAULT_VALUE = bytes([0])
@@ -15,6 +16,8 @@ NEWLINE = False
 VERBOSE = False
 WITHOUT_STDIN = False
 NO_BUFFER = False
+ESC_SEQS_STR = []
+ESC_SEQS = tuple()
 
 def init():
 	"""Perform initialization tasks"""
@@ -24,19 +27,25 @@ def init():
 	global VERBOSE
 	global WITHOUT_STDIN
 	global NO_BUFFER
+	global ESC_SEQS_STR
+	global ESC_SEQS
 
 	def version_callback(option, opt, value, parser):
 		parser.print_version()
 		exit(0)
 
-	parser = OptionParser(usage='Usage: %prog [-hnovVwz] <chipspec>', version='%prog 0.1.3', conflict_handler='resolve')
-	parser.add_option('-i', '--immediate', action='store_true', dest='no_buffer', default=False, help='flushes stdout immediately after each cycle, otherwise, default buffering is used')
+	parser = OptionParser(usage='Usage: %prog [options] <chipspec>', version='%prog 0.1.4', conflict_handler='resolve')
+	parser.add_option('-e', '--escape', action='append', dest='esc_seqs', help='Use these characters as escape sequences for input. A default of ^C and ^D are included in immediate mode (-i), '+
+	                                    'unless an empty esc sequence is provided. If a sequence is multiple characters, they must be entered in order. All except the last are echoed to the script. '+
+	                                    'Multiple sequences may be defined.')
+	parser.add_option('-i', '--immediate', action='store_true', dest='no_buffer', default=False, help='flushes stdout immediately after each cycle, otherwise, default buffering is used. '+
+	                                       'Also sets input to raw mode, rather than cbreak mode.')
 	parser.add_option('-n', '--extra-newline', action='store_true', dest='extra_newline', default=False, help='provides an extra newline to STDOUT at the end of execution, regardless of the method of termination')
 	parser.add_option('-o', '--ignore-eof-ones', action='store_true', dest='ignore_eof_o', default=False, help='when input is exhausted, instead of terminating, provides one values (0xff) until the circuit terminates itself')
 	parser.add_option('-v', '--verbose', action='store_true', dest='verbose', default=False, help='enables verbose output; shows the parsed circuitry and input/output for each cycle')
 	parser.add_option('-V', '--version', action='callback', callback=version_callback, help="show interpreter's version number and exit")
 	parser.add_option('-w', '--without-stdin', action='store_true', dest='without', default=False, help='the program uses the default value (set by -z or -o), instead of reading from STDIN. By itself, implies -z')
-	parser.add_option('-z', '--ignore-eof', action='store_true', dest='ignore_eof_z', default=False, help='when input is exhausted, instead of terminating, provides zero values (0x00) until the circuit terminates itself')
+	parser.add_option('-z', '--ignore-eof-zeroes', action='store_true', dest='ignore_eof_z', default=False, help='when input is exhausted, instead of terminating, provides zero values (0x00) until the circuit terminates itself')
 	opts, args = parser.parse_args()
 
 	IGNORE_EOF = opts.ignore_eof_z or opts.ignore_eof_o
@@ -49,6 +58,16 @@ def init():
 		DEFAULT_VALUE = bytes([255])
 	else:
 		DEFAULT_VALUE = bytes([0])
+
+	if opts.esc_seqs:
+		if (not opts.no_buffer) or ('' in opts.esc_seqs):
+			ESC_SEQS_STR = [seq for seq in opts.esc_seqs if seq]
+		else:
+			ESC_SEQS_STR = ['\x03', '\x04'] + opts.esc_seqs
+	else:
+		ESC_SEQS_STR = ['\x03', '\x04'] # By default, ^C or ^D will cause exit
+	ESC_SEQS = tuple(set([seq.encode('utf-8').decode('unicode_escape').encode('utf-8') for seq in ESC_SEQS_STR]))
+	#stderr.write('Escape sequences are: ' + repr(ESC_SEQS) + '\n')
 
 	if len(args) == 1:
 		with open(args[0], 'r') as f:
@@ -164,6 +183,7 @@ def run(circuit):
 		stderr.write('        HGFEDCBA        hgfedcba\n')
 	status = 0
 	inchar = DEFAULT_VALUE
+	history = b''
 	try:
 		while True:
 			# Read input, plus eof check
@@ -171,13 +191,23 @@ def run(circuit):
 				if WITHOUT_STDIN:
 					inchar = DEFAULT_VALUE
 				else:
-					inchar = stdin.buffer.read(1)
+					try:
+						if NO_BUFFER and stdin.isatty():
+							orig_settings = termios.tcgetattr(stdin)
+							tty.setraw(stdin)
+						inchar = stdin.buffer.read(1)
+					finally:
+						if NO_BUFFER and stdin.isatty():
+							termios.tcsetattr(stdin, termios.TCSADRAIN, orig_settings)
 					if len(inchar) == 0:
 						# EOF
 						if IGNORE_EOF:
 							inchar = DEFAULT_VALUE
 						else:
 							break
+					history += inchar
+					if history.endswith(ESC_SEQS):
+						break
 			inbin = bin(ord(inchar))[2:]
 			inbits = list(map(int, '0'*(8-len(inbin)) + inbin))[::-1]
 			if VERBOSE:
@@ -220,7 +250,7 @@ def run(circuit):
 	except StopIteration as e:
 		stderr.write('Execution halted\n')
 	if NEWLINE:
-		stdout.write('\n')
+		stdout.buffer.write(b'\n')
 
 if __name__ == '__main__':
 	spec = init()
