@@ -158,6 +158,8 @@ class Board(object):
 		self.stack[-1][index] |= value
 
 class Element(object):
+	lexemes = {}
+
 	def __init__(self, board, x, y, z, lexeme):
 		self.board = board
 		self.x = x
@@ -169,7 +171,16 @@ class Element(object):
 	def __repr__(self):
 		return self.__class__.__name__ + '(' + self.__str__() + ')'
 
+	@classmethod
+	def getValidLexemes(cls):
+		"""This can be overridden, but the preferred method is to
+		   define the variable lexemes to the proper value.
+		   Lexemes can be any iterable for this method to work."""
+		return frozenset(cls.lexemes)
+
 	def getNeighbor(self, dir):
+		"""Finds the next neighbor in any of the directions 'u', 'd',
+		   'n', 'w', 's', or 'e'. Not recommended to override."""
 		if dir == 'n':
 			if self.y <= 0:
 				return None
@@ -201,7 +212,7 @@ class Element(object):
 			else:
 				return self.board.getElement(self.x, self.y, self.z+1)
 		else:
-			assert 1 == 0, "'%s' is not a valid direction" % (dir)
+			raise ValueError("'%s' is not a valid direction" % (dir))
 
 	def poll(self, side):
 		"""Called by neighboring elements to read a value. Must give 0
@@ -239,18 +250,18 @@ class Element(object):
 ###                       ###
 
 class Adder(Element):
+	lexemes = {'#':('ew','#'), '@':('we','@')}
+
 	def __init__(self, board, x, y, z, lexeme):
 		self.flavor, lex = self.__class__.getFlavor(lexeme)
 		Element.__init__(self, board, x, y, z, lex)
 
-	@staticmethod
-	def getFlavor(lexeme):
-		if lexeme in '#':
-			return 'ew', '#'
-		elif lexeme in '@':
-			return 'we', '@'
-		else:
-			assert 1 == 0, "'%s' is not a valid lexeme for a %s element" % (lexeme, self.__class__.__name__)
+	@classmethod
+	def getFlavor(cls, lexeme):
+		try:
+			return cls.lexemes[lexeme]
+		except:
+			raise KeyError("'%s' is not a valid lexeme for a %s element" % (lexeme, cls.__name__))
 
 	def poll(self, side):
 		if side == self.flavor[0]:
@@ -261,18 +272,18 @@ class Adder(Element):
 			return 0
 
 class And(Element):
+	lexemes = {']':('ew',']'), '[':('we','[')}
+
 	def __init__(self, board, x, y, z, lexeme):
 		self.flavor, lex = self.__class__.getFlavor(lexeme)
 		Element.__init__(self, board, x, y, z, lex)
 
-	@staticmethod
-	def getFlavor(lexeme):
-		if lexeme in ']':
-			return 'ew', ']'
-		elif lexeme in '[':
-			return 'we', '['
-		else:
-			assert 1 == 0, "'%s' is not a valid lexeme for a %s element" % (lexeme, self.__class__.__name__)
+	@classmethod
+	def getFlavor(cls, lexeme):
+		try:
+			return cls.lexemes[lexeme]
+		except:
+			raise KeyError("'%s' is not a valid lexeme for a %s element" % (lexeme, cls.__name__))
 
 	def poll(self, side):
 		if side == self.flavor[0]:
@@ -287,27 +298,31 @@ class And(Element):
 			return 0
 
 class Cache(Element):
+	lexemes = 'K'
+
 	def __init__(self, board, x, y, z, lexeme):
 		Element.__init__(self, board, x, y, z, lexeme)
 		self.ages = {'n':0, 's':0, 'e':0, 'w':0}
-		self.values = {'n':0, 's':0, 'e':0, 'w':0}
+		self.outValues = {'n':0, 's':0, 'e':0, 'w':0}
 
 	# Make second flavor 'k' that only polls the opposite neighbor of each side?
 
 	def poll(self, side):
-		if side in self.values.keys():
+		if side in self.outValues.keys():
 			if self.ages[side] != self.board.age:
 				self.ages[side] = self.board.age
-				self.values[side] = 0;
-				for dir in self.values.keys():
+				self.outValues[side] = 0;
+				for dir in self.outValues.keys():
 					if dir == side:
 						continue
-					self.values[side] = self.values[side] or self.pollNeighbor(dir)
-			return self.values[side]
+					self.outValues[side] = self.outValues[side] or self.pollNeighbor(dir)
+			return self.outValues[side]
 		else:
 			return 0
 
 class Control(Element):
+	lexemes = 'TtSs'
+
 	def __init__(self, board, x, y, z, lexeme):
 		Element.__init__(self, board, x, y, z, lexeme)
 		board.registerInternal(self, 80)
@@ -335,8 +350,10 @@ class Control(Element):
 					self.board.addStatus(Board.READ_HOLD)
 
 class Debug(Element):
+	lexemes = 'X'
+
 	def __init__(self, board, x, y, z, lexeme):
-		Element.__init__(self, board, x, y, z, lexeme)
+		Element.__init__(self, board, x, y, z, self.lexemes[0])
 		board.registerInternal(self, 90)
 
 	def pollInternal(self):
@@ -347,6 +364,8 @@ class Debug(Element):
 		self.board.addDebug('\n\t\t\t\t\t%s(%d,%d,%d): %s' % (self.lexeme, self.z, self.y, self.x, value))
 
 class Delay(Element):
+	lexemes = {'Z':('ew','Z'), 'z':('we','z')}
+
 	def __init__(self, board, x, y, z, lexeme):
 		self.flavor, lex = self.__class__.getFlavor(lexeme)
 		Element.__init__(self, board, x, y, z, lex)
@@ -355,14 +374,12 @@ class Delay(Element):
 		self.nextValue = 0
 		board.registerInternal(self, 80)
 
-	@staticmethod
-	def getFlavor(lexeme):
-		if lexeme in 'Z':
-			return 'ew', 'Z'
-		elif lexeme in 'z':
-			return 'we', 'z'
-		else:
-			assert 1 == 0, "'%s' is not a valid lexeme for a %s element" % (lexeme, self.__class__.__name__)
+	@classmethod
+	def getFlavor(cls, lexeme):
+		try:
+			return cls.lexemes[lexeme]
+		except:
+			raise KeyError("'%s' is not a valid lexeme for a %s element" % (lexeme, cls.__name__))
 
 	def pollInternal(self):
 		if self.age != self.board.age:
@@ -380,18 +397,18 @@ class Delay(Element):
 			return 0
 
 class Diode(Element):
+	lexemes = {'»':('ew','»'), '«':('we','«')}
+
 	def __init__(self, board, x, y, z, lexeme):
 		self.flavor, lex = self.__class__.getFlavor(lexeme)
-		Element.__init__(self, board, x, y, z, ' ')
+		Element.__init__(self, board, x, y, z, lex)
 
-	@staticmethod
-	def getFlavor(lexeme):
-		if lexeme in '»':
-			return 'ew', '»'
-		elif lexeme in '«':
-			return 'we', '«'
-		else:
-			assert 1 == 0, "'%s' is not a valid lexeme for a %s element" % (lexeme, self.__class__.__name__)
+	@classmethod
+	def getFlavor(cls, lexeme):
+		try:
+			return cls.lexemes[lexeme]
+		except:
+			raise KeyError("'%s' is not a valid lexeme for a %s element" % (lexeme, cls.__name__))
 
 	def poll(self, side):
 		if side == self.flavor[0]:
@@ -400,13 +417,17 @@ class Diode(Element):
 			return 0
 
 class Empty(Element):
+	lexemes = ' '
+
 	def __init__(self, board, x, y, z, lexeme):
-		Element.__init__(self, board, x, y, z, ' ')
+		Element.__init__(self, board, x, y, z, self.lexemes[0])
 
 class InBit(Element):
+	lexemes = 'ABCDEFGH'
+
 	def __init__(self, board, x, y, z, lexeme):
 		Element.__init__(self, board, x, y, z, lexeme)
-		self.index = 'ABCDEFGH'.index(lexeme)
+		self.index = self.lexemes.index(lexeme)
 
 	def poll(self, side):
 		if side in 'nswe':
@@ -415,20 +436,20 @@ class InBit(Element):
 			return 0
 
 class Memory(Element):
+	lexemes = {'M':('ew','M'), 'm':('we','m')}
+
 	def __init__(self, board, x, y, z, lexeme):
 		self.flavor, lex = self.__class__.getFlavor(lexeme)
 		Element.__init__(self, board, x, y, z, lex)
 		self.currValue = 0
 		board.registerInternal(self, 60)
 
-	@staticmethod
-	def getFlavor(lexeme):
-		if lexeme in 'M':
-			return 'ew', 'M'
-		elif lexeme in 'm':
-			return 'we', 'm'
-		else:
-			assert 1 == 0, "'%s' is not a valid lexeme for a %s element" % (lexeme, self.__class__.__name__)
+	@classmethod
+	def getFlavor(cls, lexeme):
+		try:
+			return cls.lexemes[lexeme]
+		except:
+			raise KeyError("'%s' is not a valid lexeme for a %s element" % (lexeme, cls.__name__))
 
 	def pollInternal(self):
 		if self.pollNeighbor('n') or self.pollNeighbor('s'):
@@ -446,18 +467,19 @@ class Memory(Element):
 			return 0
 
 class Not(Element):
+	lexemes = {'⌐~':('ew','⌐'), '¬÷':('we','¬')}
+	
 	def __init__(self, board, x, y, z, lexeme):
 		self.flavor, lex = self.__class__.getFlavor(lexeme)
 		Element.__init__(self, board, x, y, z, lex)
 
-	@staticmethod
-	def getFlavor(lexeme):
-		if lexeme in '⌐~':
-			return 'ew', '⌐'
-		elif lexeme in '¬÷':
-			return 'we', '¬'
+	@classmethod
+	def getFlavor(cls, lexeme):
+		for key in cls.lexemes:
+			if lexeme in key:
+				return cls.lexemes[key]
 		else:
-			assert 1 == 0, "'%s' is not a valid lexeme for a %s element" % (lexeme, self.__class__.__name__)
+			raise KeyError("'%s' is not a valid lexeme for a %s element" % (lexeme, cls.__name__))
 
 	def poll(self, side):
 		if side == self.flavor[0]:
@@ -466,18 +488,18 @@ class Not(Element):
 			return 0
 
 class Or(Element):
+	lexemes = {')':('ew',')'), '(':('we','(')}
+
 	def __init__(self, board, x, y, z, lexeme):
 		self.flavor, lex = self.__class__.getFlavor(lexeme)
 		Element.__init__(self, board, x, y, z, lex)
 
-	@staticmethod
-	def getFlavor(lexeme):
-		if lexeme in ')':
-			return 'ew', ')'
-		elif lexeme in '(':
-			return 'we', '('
-		else:
-			assert 1 == 0, "'%s' is not a valid lexeme for a %s element" % (lexeme, self.__class__.__name__)
+	@classmethod
+	def getFlavor(cls, lexeme):
+		try:
+			return cls.lexemes[lexeme]
+		except:
+			raise KeyError("'%s' is not a valid lexeme for a %s element" % (lexeme, cls.__name__))
 
 	def poll(self, side):
 		if side == self.flavor[0]:
@@ -492,9 +514,11 @@ class Or(Element):
 			return 0
 
 class OutBit(Element):
+	lexemes = 'abcdefgh'
+
 	def __init__(self, board, x, y, z, lexeme):
 		Element.__init__(self, board, x, y, z, lexeme)
-		self.index = 'abcdefgh'.index(lexeme)
+		self.index = self.lexemes.index(lexeme)
 		board.registerInternal(self, 90)
 
 	def pollInternal(self):
@@ -508,16 +532,19 @@ class OutBit(Element):
 		self.board.writeBit(self.index, value)
 
 class Pin(Element):
+	lexemes = 'Oo'
+
 	def __init__(self, board, x, y, z, lexeme):
 		lex = self.__class__.getFlavor(lexeme)
 		Element.__init__(self, board, x, y, z, lex)
 
-	@staticmethod
-	def getFlavor(lexeme):
-		if lexeme in 'Oo':
+	@classmethod
+	def getFlavor(cls, lexeme):
+		if lexeme in cls.lexemes:
 			return lexeme
 		else:
-			assert 1 == 0, "'%s' is not a valid lexeme for a %s element" % (lexeme, self.__class__.__name__)
+			raise KeyError("'%s' is not a valid lexeme for a %s element" % (lexeme, cls.__name__))
+
 
 	def poll(self, side):
 		# Pins connect to non-pins always, and pins only when:
@@ -540,8 +567,10 @@ class Pin(Element):
 		return value
 
 class Random(Element):
+	lexemes = '?'
+
 	def __init__(self, board, x, y, z, lexeme):
-		Element.__init__(self, board, x, y, z, '?')
+		Element.__init__(self, board, x, y, z, self.lexemes[0])
 		self.age = 0
 		self.value = 0
 
@@ -555,8 +584,10 @@ class Random(Element):
 			return 0
 
 class Source(Element):
+	lexemes = '*'
+
 	def __init__(self, board, x, y, z, lexeme):
-		Element.__init__(self, board, x, y, z, '*')
+		Element.__init__(self, board, x, y, z, self.lexemes[0])
 
 	def poll(self, side):
 		if side in 'nswe':
@@ -565,9 +596,11 @@ class Source(Element):
 			return 0
 
 class StackBit(Element):
+	lexemes = '01234567'
+
 	def __init__(self, board, x, y, z, lexeme):
 		Element.__init__(self, board, x, y, z, lexeme)
-		self.index = '01234567'.index(lexeme)
+		self.index = self.lexemes.index(lexeme)
 		board.registerInternal(self, 20)
 
 	def pollInternal(self):
@@ -585,19 +618,19 @@ class StackBit(Element):
 			return 0
 
 class StackControl(Element):
+	lexemes = {'9':('w','9'), '8':('r','8')}
+
 	def __init__(self, board, x, y, z, lexeme):
 		self.flavor, lex = self.__class__.getFlavor(lexeme)
 		Element.__init__(self, board, x, y, z, lex)
 		board.registerInternal(self, 10)
 
-	@staticmethod
-	def getFlavor(lexeme):
-		if lexeme in '9':
-			return 'w', '9'
-		elif lexeme in '8':
-			return 'r', '8'
-		else:
-			assert 1 == 0, "'%s' is not a valid lexeme for a %s element" % (lexeme, self.__class__.__name__)
+	@classmethod
+	def getFlavor(cls, lexeme):
+		try:
+			return cls.lexemes[lexeme]
+		except:
+			raise KeyError("'%s' is not a valid lexeme for a %s element" % (lexeme, cls.__name__))
 
 	def pollInternal(self):
 		value = self.pollNeighbor('n') or\
@@ -607,18 +640,18 @@ class StackControl(Element):
 		self.board.setStackControl(self, self.flavor, value)
 
 class Switch(Element):
+	lexemes = {'/':(1,'/'), '\\':(0,'\\')}
+
 	def __init__(self, board, x, y, z, lexeme):
 		self.flavor, lex = self.__class__.getFlavor(lexeme)
 		Element.__init__(self, board, x, y, z, lex)
 
-	@staticmethod
-	def getFlavor(lexeme):
-		if lexeme in '/':
-			return 1, '/'
-		elif lexeme in '\\':
-			return 0, '\\'
-		else:
-			assert 1 == 0, "'%s' is not a valid lexeme for a %s element" % (lexeme, self.__class__.__name__)
+	@classmethod
+	def getFlavor(cls, lexeme):
+		try:
+			return cls.lexemes[lexeme]
+		except:
+			raise KeyError("'%s' is not a valid lexeme for a %s element" % (lexeme, cls.__name__))
 
 	def poll(self, side):
 		if side == 'n':
@@ -643,36 +676,21 @@ class Switch(Element):
 			return 0
 
 class Wire(Element):
+	lexemes = {'+┼':('nswe','┼'), '|│':('ns','│'), '-─':('ew','─'),
+	           '^┴':('nwe','┴'), 'v┬':('swe','┬'), '>├':('nse','├'), '<┤':('nsw','┤'),
+	           '`└':('ne','└'), '\'┘':('nw','┘'), ',┌':('se','┌'), '.┐':('sw','┐')}
+
 	def __init__(self, board, x, y, z, lexeme):
 		self.flavor, lex = self.__class__.getFlavor(lexeme)
 		Element.__init__(self, board, x, y, z, lex)
 
-	@staticmethod
-	def getFlavor(lexeme):
-		if lexeme in '+┼':
-			return 'nswe', '┼'
-		elif lexeme in '|│':
-			return 'ns', '│'
-		elif lexeme in '-─':
-			return 'ew', '─'
-		elif lexeme in '^┴':
-			return 'nwe', '┴'
-		elif lexeme in 'v┬':
-			return 'swe', '┬'
-		elif lexeme in '>├':
-			return 'nse', '├'
-		elif lexeme in '<┤':
-			return 'nsw', '┤'
-		elif lexeme in '`└':
-			return 'ne', '└'
-		elif lexeme in '\'┘':
-			return 'nw', '┘'
-		elif lexeme in ',┌':
-			return 'se', '┌'
-		elif lexeme in '.┐':
-			return 'sw', '┐'
+	@classmethod
+	def getFlavor(cls, lexeme):
+		for key in cls.lexemes:
+			if lexeme in key:
+				return cls.lexemes[key]
 		else:
-			assert 1 == 0, "'%s' is not a valid lexeme for a %s element" % (lexeme, self.__class__.__name__)
+			raise KeyError("'%s' is not a valid lexeme for a %s element" % (lexeme, cls.__name__))
 
 	def poll(self, side):
 		if side in self.flavor:
@@ -687,8 +705,10 @@ class Wire(Element):
 			return 0
 
 class WireCross(Element):
+	lexemes = '×x'
+
 	def __init__(self, board, x, y, z, lexeme):
-		Element.__init__(self, board, x, y, z, '×')
+		Element.__init__(self, board, x, y, z, self.lexemes[0])
 
 	def poll(self, side):
 		if side == 'n':
@@ -703,18 +723,18 @@ class WireCross(Element):
 			return 0
 
 class Xor(Element):
+	lexemes = {'}':('ew','}'), '{':('we','{')}
+
 	def __init__(self, board, x, y, z, lexeme):
 		self.flavor, lex = self.__class__.getFlavor(lexeme)
 		Element.__init__(self, board, x, y, z, lex)
 
-	@staticmethod
-	def getFlavor(lexeme):
-		if lexeme in '}':
-			return 'ew', '}'
-		elif lexeme in '{':
-			return 'we', '{'
-		else:
-			assert 1 == 0, "'%s' is not a valid lexeme for a %s element" % (lexeme, self.__class__.__name__)
+	@classmethod
+	def getFlavor(cls, lexeme):
+		try:
+			return cls.lexemes[lexeme]
+		except:
+			raise KeyError("'%s' is not a valid lexeme for a %s element" % (lexeme, cls.__name__))
 
 	def poll(self, side):
 		if side == self.flavor[0]:
@@ -732,38 +752,35 @@ class Xor(Element):
 #   End Element classes   #
 ###                     ###
 
-lexmap = {
-		'@#': Adder,
-		'[]': And,
-		'K': Cache,
-		'TtSs': Control,
-		'X': Debug,
-		'Zz': Delay,
-		'«»': Diode,
-		' ': Empty,
-		'ABCDEFGH': InBit,
-		'Mm': Memory,
-		'⌐¬÷~': Not,
-		'()': Or,
-		'abcdefgh': OutBit,
-		'Oo': Pin,
-		'?': Random,
-		'*': Source,
-		'01234567': StackBit,
-		'89': StackControl,
-		'\\/': Switch,
-		'─│┌┐└┘├┤┬┴┼+|-^v><,.`\'': Wire,
-		'×x': WireCross,
-		'{}': Xor
-	}
+classes = set()
+module = sys.modules[__name__]
+for itemName in dir(module):
+	item = getattr(module, itemName)
+	try:
+		if issubclass(item, Element) and item is not Element:
+			classes.add(item)
+		else:
+			pass
+	except TypeError: # item isn't a class
+		pass
+
+lexmap = {}
+lexerrs = []
+for cls in classes:
+	for lexes in cls.getValidLexemes():
+		for lex in lexes:
+			prev = lexmap.setdefault(lex, cls)
+			if prev != cls:
+				lexerrs.append(ValueError("The lexeme '%s' is claimed by both class '%s' and class '%s'."
+				                          % (lex, prev.__name__, cls.__name__)))
+if lexerrs:
+	raise ValueError('\nValueError: '.join(str(err) for err in lexerrs))
 
 def getElementType(lexeme):
-	for lexes,etype in lexmap.items():
-		if lexeme in lexes:
-			return etype
-	else:
-		assert 1 == 0, "'%s' is not a valid lexeme" % (lexeme)
-		return Empty
+	try:
+		return lexmap[lexeme]
+	except KeyError:
+		raise KeyError("'%s' is not a valid lexeme" % (lexeme))
 
 if __name__ == '__main__':
 	print('This file cannot be executed directly. Please use the chip interpreter instead.')
