@@ -3,12 +3,16 @@
 #author Derek Anderson
 #interpreter v0.1.4
 
-import random, subprocess
+import random, subprocess, sys
 from collections import defaultdict
 
-# Window width, minus some for padding
-_rows, _columns = subprocess.check_output(['stty', 'size']).split()
-COLUMNS = int(int(_columns)*0.85)
+# Determine window width
+if sys.version_info[1] >= 3: # Python 3.3+
+	import shutil
+	_terminal_size = shutil.get_terminal_size((80,20))
+	COLUMNS = int(_terminal_size.columns)
+else:
+	COLUMNS = 80
 
 oppositeDir = {
 		'n':'s',
@@ -38,7 +42,7 @@ class Board(object):
 		if self.initialized():
 			out = ''
 			# Find out how many frames fit in columns
-			n = COLUMNS//(self.w+1)
+			n = (COLUMNS-2)//(self.w+1)
 			n = 1 if n == 0 else n
 			# Spread the frames evenly across rows
 			n = (self.d+n-1)//n
