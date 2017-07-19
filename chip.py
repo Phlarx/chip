@@ -10,25 +10,26 @@ from optparse import OptionParser
 import tty, termios
 import chiplib
 
-DEFAULT_VALUE = bytes([0])
-IGNORE_EOF = False
-NEWLINE = False
-VERBOSE = False
-WITHOUT_STDIN = False
-NO_BUFFER = False
-ESC_SEQS_STR = []
-ESC_SEQS = tuple()
+class ConfigDict(dict):
+	def __getattr__(self, name):
+		return self[name]
+	def __setattr__(self, name, value):
+		if name in self:
+			self[name] = value
+		else:
+			raise KeyError(name)
+Cfg = ConfigDict(
+	DEFAULT_VALUE=bytes([0]),
+	ESC_SEQS=tuple(),
+	IGNORE_EOF=False,
+	NEWLINE=False,
+	NO_BUFFER=False,
+	VERBOSE=False,
+	WITHOUT_STDIN=False
+)
 
 def init():
 	"""Perform initialization tasks"""
-	global DEFAULT_VALUE
-	global IGNORE_EOF
-	global NEWLINE
-	global VERBOSE
-	global WITHOUT_STDIN
-	global NO_BUFFER
-	global ESC_SEQS_STR
-	global ESC_SEQS
 
 	def version_callback(option, opt, value, parser):
 		parser.print_version()
@@ -48,26 +49,29 @@ def init():
 	parser.add_option('-z', '--ignore-eof-zeroes', action='store_true', dest='ignore_eof_z', default=False, help='when input is exhausted, instead of terminating, provides zero values (0x00) until the circuit terminates itself')
 	opts, args = parser.parse_args()
 
-	IGNORE_EOF = opts.ignore_eof_z or opts.ignore_eof_o
-	NEWLINE = opts.extra_newline
-	VERBOSE = opts.verbose
-	WITHOUT_STDIN = opts.without
-	NO_BUFFER = opts.no_buffer
+	Cfg.IGNORE_EOF = opts.ignore_eof_z or opts.ignore_eof_o
+	Cfg.NEWLINE = opts.extra_newline
+	Cfg.VERBOSE = opts.verbose
+	Cfg.WITHOUT_STDIN = opts.without
+	Cfg.NO_BUFFER = opts.no_buffer
 
 	if opts.ignore_eof_o:
-		DEFAULT_VALUE = bytes([255])
+		Cfg.DEFAULT_VALUE = bytes([255])
 	else:
-		DEFAULT_VALUE = bytes([0])
+		Cfg.DEFAULT_VALUE = bytes([0])
 
+	esc_seqs_str = []
 	if opts.esc_seqs:
 		if (not opts.no_buffer) or ('' in opts.esc_seqs):
-			ESC_SEQS_STR = [seq for seq in opts.esc_seqs if seq]
+			esc_seqs_str = [seq for seq in opts.esc_seqs if seq]
 		else:
-			ESC_SEQS_STR = ['\x03', '\x04'] + opts.esc_seqs
-	else:
-		ESC_SEQS_STR = ['\x03', '\x04'] # By default, ^C or ^D will cause exit
-	ESC_SEQS = tuple(set([seq.encode('utf-8').decode('unicode_escape').encode('utf-8') for seq in ESC_SEQS_STR]))
-	#stderr.write('Escape sequences are: ' + repr(ESC_SEQS) + '\n')
+			esc_seqs_str = ['\x03', '\x04'] + opts.esc_seqs
+	elif stdin.isatty():
+		esc_seqs_str = ['\x03', '\x04'] # By default, ^C or ^D will cause exit
+	Cfg.ESC_SEQS = tuple(set([seq.encode('utf-8').decode('unicode_escape').encode('utf-8') for seq in esc_seqs_str]))
+
+	if Cfg.VERBOSE or stdin.isatty():
+		stderr.write('Escape sequences are: ' + repr(Cfg.ESC_SEQS) + '\n')
 
 	if len(args) == 1:
 		with open(args[0], 'r') as f:
@@ -141,7 +145,7 @@ def setup(ospec):
 
 	board = chiplib.Board()
 	board.initialize([[[chiplib.getElementType(char)(board, x, y, z, char) for x,char in enumerate(row)] for y,row in enumerate(layer)] for z,layer in enumerate(spec2)])
-	if VERBOSE:
+	if Cfg.VERBOSE:
 		stderr.write(str(board) + '\n')
 
 	def circuit_gen():
@@ -154,7 +158,7 @@ def setup(ospec):
 				inbits = yield (status, outbits, debug)
 				status, outbits, debug = board.run(inbits)
 		except KeyboardInterrupt as e:
-			if VERBOSE:
+			if Cfg.VERBOSE:
 				stderr.write('\n' + str(board))
 			stderr.write('\nStack: ')
 			if board.stack:
@@ -179,38 +183,38 @@ def setup(ospec):
 
 def run(circuit):
 	"""Run the circuit for each input byte"""
-	if VERBOSE:
+	if Cfg.VERBOSE:
 		stderr.write('        HGFEDCBA        hgfedcba\n')
 	status = 0
-	inchar = DEFAULT_VALUE
+	inchar = Cfg.DEFAULT_VALUE
 	history = b''
 	try:
 		while True:
 			# Read input, plus eof check
 			if not (status & chiplib.Board.READ_HOLD):
-				if WITHOUT_STDIN:
-					inchar = DEFAULT_VALUE
+				if Cfg.WITHOUT_STDIN:
+					inchar = Cfg.DEFAULT_VALUE
 				else:
 					try:
-						if NO_BUFFER and stdin.isatty():
+						if Cfg.NO_BUFFER and stdin.isatty():
 							orig_settings = termios.tcgetattr(stdin)
 							tty.setraw(stdin)
 						inchar = stdin.buffer.read(1)
 					finally:
-						if NO_BUFFER and stdin.isatty():
+						if Cfg.NO_BUFFER and stdin.isatty():
 							termios.tcsetattr(stdin, termios.TCSADRAIN, orig_settings)
 					if len(inchar) == 0:
 						# EOF
-						if IGNORE_EOF:
-							inchar = DEFAULT_VALUE
+						if Cfg.IGNORE_EOF:
+							inchar = Cfg.DEFAULT_VALUE
 						else:
 							break
 					history += inchar
-					if history.endswith(ESC_SEQS):
+					if history.endswith(Cfg.ESC_SEQS):
 						break
 			inbin = bin(ord(inchar))[2:]
 			inbits = list(map(int, '0'*(8-len(inbin)) + inbin))[::-1]
-			if VERBOSE:
+			if Cfg.VERBOSE:
 				if not (status & chiplib.Board.READ_HOLD):
 					if 0 <= inchar[0] < 32 or inchar[0] == 127:
 						inc = '�'
@@ -225,7 +229,7 @@ def run(circuit):
 	
 			# Output
 			outchar = bytes([int(''.join(map(str, outbits[::-1])), 2)])
-			if VERBOSE:
+			if Cfg.VERBOSE:
 				if not (status & chiplib.Board.WRITE_HOLD):
 					if 0 <= outchar[0] < 32 or outchar[0] == 127:
 						outc = '�'
@@ -239,17 +243,17 @@ def run(circuit):
 				stderr.write('\n')
 			if not (status & chiplib.Board.WRITE_HOLD):
 				stdout.buffer.write(outchar)
-				if NO_BUFFER:
+				if Cfg.NO_BUFFER:
 					stdout.flush()
 	
 			# Early termination
 			if (status & chiplib.Board.TERMINATE):
 				break
-		if VERBOSE:
+		if Cfg.VERBOSE:
 			stderr.write('\n')
 	except StopIteration as e:
 		stderr.write('Execution halted\n')
-	if NEWLINE:
+	if Cfg.NEWLINE:
 		stdout.buffer.write(b'\n')
 
 if __name__ == '__main__':
