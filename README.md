@@ -20,8 +20,8 @@ A Chip circuit is made up of the elements described here:
 | <code>HGFEDCBA</code> |   | 8 bits of the input data; A is LSbit; value given on all sides; may be used multiple times; when input is exhausted, program terminates (end identifier like NUL is recommended for programs that need to continue after input is done)
 | <code>hgfedbca</code> |   | 8 bits of output data; a is LSbit; value is taken from all sides; may be used multiple times (as usual, all sides/uses are or'd before output)
 |                       |   |
-| <code>76543210</code> |   | 8 bits wide stack memory; inactive without 89 controls (produces lows); when both read and write are high behaves like Mm with high write signal; may not read or write to another stack bit directly
-| <code>8</code>        |   | Stack read memory control; when given high stack is in read state; not altered by Ss controls; reading an empty stack produces lows
+| <code>76543210</code> |   | 8 bits wide stack memory; inactive without 89 controls (produces lows); when both read and write are high behaves like Zz; unable to read or write to another stack bit directly
+| <code>8</code>        |   | Stack read memory control; when given high stack is in read state; not altered by Ss controls; reading an empty stack produces lows; if not set, stack can still be read, but won't be popped this cycle
 | <code>9</code>        |   | Stack write memory control; when given high stack is in write state; not altered by Ss controls
 |                       |   |
 | <code>┼+</code>       |   | wire; connect on all sides; first form is (U+253C)
@@ -72,6 +72,8 @@ A Chip circuit is made up of the elements described here:
 | <code>S</code>        |   | skips output for this cycle; allows multiple inputs per output
 | <code>s</code>        |   | keep current input for next cycle; allows multiple outputs per input
 | <code>X</code>        |   | examines values for debugging, reads signals on all sides (or'ing if necessary), and prints the value to verbose output
+
+* Elements marked with an asterisk let signals pass north-south unaffected, e.g. allowing easy control of multiple gate or memory cells.
 
 # Examples
 These examples are largely limited to 4 bits or less for simplicity.

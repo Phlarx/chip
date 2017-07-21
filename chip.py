@@ -70,7 +70,7 @@ def init():
 		esc_seqs_str = ['\x03', '\x04'] # By default, ^C or ^D will cause exit
 	Cfg.ESC_SEQS = tuple(set([seq.encode('utf-8').decode('unicode_escape').encode('utf-8') for seq in esc_seqs_str]))
 
-	if Cfg.VERBOSE or stdin.isatty():
+	if Cfg.ESC_SEQS:
 		stderr.write('Escape sequences are: ' + repr(Cfg.ESC_SEQS) + '\n')
 
 	if len(args) == 1:

@@ -13,7 +13,7 @@
 - [x] Add flag for execution without stdin, really only useful with -o or -z
 - [ ] Allow arbitrary default values, via --ignore-eof XX, where XX is 2 digits hexadecimal
 - [ ] Add default values that count up from 0x00 instead of a constant value
-- [ ] Add a delay mechanism? (W for wait? $ for sleep? P for pause?) How? Options are read from stack, different delay per side, something else? All executed together between this cycle and next?
+- [ ] Add a delay mechanism? (W for wait? $ for sleep? P for pause?) How? Options are read/peeked from stack, different delay per side, something else?
 - [ ] Implement loop detection during cycle execution; warn to stdout, and return 0 immediately?
 - [ ] Maybe: Implement memoization during cycle execution (can be done manually via cache elements (K))
 - [ ] Optimization: Implement iterative calls for polling, rather than recursive
@@ -23,7 +23,7 @@
 - [x] Optimization: In case of output suppression S, skip polling output bit elements, since they become unnecessary
 - [ ] Add pulse element (!?), on for first tick of execution, then off for all remaining cycles. For init stuff.
 - [ ] Add shift elements, wires that connect diagonally (Ll?), variant 1 connects n-w and s-e, variants 2 connects n-e and s-w
-- [ ] Change stack to have a split head, one for reading, and one for writing
+- [x] Change stack to have a split head, one for reading, and one for writing
 - [ ] Maybe: Add second stack (with unicode numberish elements?)
 - [ ] Maybe: Add queue mode instead of stack mode (two queues? queue+stack?)
 - [ ] Maybe: Add addressed memory mode instead of stack mode (using second stack elements as addressors?)
@@ -35,3 +35,6 @@
 - [ ] BUG: fix wire loop polling; it is highly inefficient, and sometimes incorrect. May be partially solved by general loop detection
 - [ ] Add command line parameter to terminate generated input after N bytes (-cN)?
 - [ ] Add lexeme/element listing to help/usage message
+- [ ] Update from optparse to argparse
+- [ ] Reevaluate StackControl -- does it really need to be more complex than Control?
+- [ ] Maybe: Improve efficiency of Cache (K) by caching in-values for each side as well as / instead of out-values

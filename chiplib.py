@@ -74,20 +74,30 @@ class Board(object):
 		self.statuscode = 0
 		self.stackctl = {'w':set(), 'r':set()}
 		self.stack = []
+		self.stackheadr = None
+		self.stackheadw = None
 		self.age = 0
 		self.debug = ''
 
-		def processStackWrite():
-			if self.getStackControl('w'):
-				# push current stack value to second position
-				self.stack.append([0]*8)
-		def processStackRead():
-			if self.getStackControl('r'):
-				# remove current value to bring up the next
+		def prepareStack():
+			if self.stack:
+				# Peek at stack to read
+				self.stackheadr = self.stack[-1]
+			else:
+				# Produce zeroes to read if the stack is empty
+				self.stackheadr = [0]*8
+			# Create write head unconditionally
+			self.stackheadw = [0]*8
+		def finalizeStack():
+			if self.getStackControl('r') and self.stack:
+				# If we were reading, not only peeking, actually pop the stack now
 				self.stack.pop()
+			if self.getStackControl('w'):
+				# If we were writing, commit the write head
+				self.stack.append(self.stackheadw)
 
-		self.registerInternal(processStackWrite, 11)
-		self.registerInternal(processStackRead, 99)
+		self.registerInternal(prepareStack, 1)
+		self.registerInternal(finalizeStack, 99)
 
 	def initialized(self):
 		return self.cboard is not None
@@ -109,12 +119,10 @@ class Board(object):
 		self.statuscode = 0
 		self.stackctl['w'].clear()
 		self.stackctl['r'].clear()
+		self.stackheadr = None
+		self.stackheadw = None
 		self.age += 1
 		self.debug = ''
-
-		if not self.stack:
-			# avoid an empty stack by providing a zero value
-			self.stack.append([0]*8)
 
 		for rank in sorted(self.terminals.keys()):
 			for element in self.terminals[rank]:
@@ -141,6 +149,10 @@ class Board(object):
 		return self.statuscode & statuscode
 
 	def setStackControl(self, control, controlFlavor, controlValue):
+		"""The two stack controls -- read and write -- are each lists.
+		   When the control is set, the setting element is added to
+		   the list, when cleared it is removed. If the list has any
+		   values, its control is considered active."""
 		if controlValue == 1:
 			self.stackctl[controlFlavor].add(control)
 		elif controlValue == 0:
@@ -151,11 +163,9 @@ class Board(object):
 		return 1 if self.stackctl[controlFlavor] else 0
 
 	def readStackBit(self, index):
-		assert self.stack, "Tried to read from an empty stack"
-		return self.stack[-1][index]
+		return self.stackheadr[index]
 	def writeStackBit(self, index, value):
-		assert self.stack, "Tried to write to an empty stack"
-		self.stack[-1][index] |= value
+		self.stackheadw[index] |= value
 
 class Element(object):
 	lexemes = {}
@@ -468,7 +478,7 @@ class Memory(Element):
 
 class Not(Element):
 	lexemes = {'⌐~':('ew','⌐'), '¬÷':('we','¬')}
-	
+
 	def __init__(self, board, x, y, z, lexeme):
 		self.flavor, lex = self.__class__.getFlavor(lexeme)
 		Element.__init__(self, board, x, y, z, lex)
@@ -752,6 +762,7 @@ class Xor(Element):
 #   End Element classes   #
 ###                     ###
 
+# Generate the set of all subclasses of Element
 classes = set()
 module = sys.modules[__name__]
 for itemName in dir(module):
@@ -764,6 +775,7 @@ for itemName in dir(module):
 	except TypeError: # item isn't a class
 		pass
 
+# Generate the 1-to-1 mapping of lexeme -> element type
 lexmap = {}
 lexerrs = []
 for cls in classes:
@@ -775,6 +787,12 @@ for cls in classes:
 				                          % (lex, prev.__name__, cls.__name__)))
 if lexerrs:
 	raise ValueError('\nValueError: '.join(str(err) for err in lexerrs))
+
+# Generate the 1-to-many mapping of element type -> lexeme
+lexmap_r = defaultdict(list)
+for k, v in lexmap.items():
+	lexmap_r[v].append(k)
+lexmap_r = dict(lexmap_r)
 
 def getElementType(lexeme):
 	try:
