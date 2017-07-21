@@ -40,6 +40,7 @@ A Chip circuit is made up of the elements described here:
 | <code>Mm</code>       | * | 1-bit memory cell; write from west when high on north/south, read from east; lowercase is horizontally mirrored
 | <code>Zz</code>       |   | 1-cycle buffer; input on west or north, output value from previous cycle on east or south; outputs low on first cycle; lowercase is horizontally mirrored
 | <code>?</code>        |   | Random; each cycle produces high or low randomly; each instance is a unique and independent source
+| <code>!</code>        |   | Pulse; produces a 1-tick pulse on the first cycle; useful for init tasks
 |                       |   |
 | <code>»</code>        |   | diode; west is in, east is out, north and south ignored; form is (U+00BB)
 | <code>«</code>        |   | diode; horizontally mirrored of above; form is (U+00AB)

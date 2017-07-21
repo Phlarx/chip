@@ -576,6 +576,22 @@ class Pin(Element):
 					value = value or self.pollNeighbor(s)
 		return value
 
+class Pulse(Element):
+	lexemes = '!'
+
+	def __init__(self, board, x, y, z, lexeme):
+		Element.__init__(self, board, x, y, z, self.lexemes[0])
+
+	def poll(self, side):
+		if side in 'nswe':
+			# Zero is the setup age, so pulse at age one.
+			if self.board.age == 1:
+				return 1
+			else:
+				return 0
+		else:
+			return 0
+
 class Random(Element):
 	lexemes = '?'
 
