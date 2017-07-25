@@ -158,6 +158,9 @@ def setup(ospec):
 				inbits = yield (status, outbits, debug)
 				status, outbits, debug = board.run(inbits)
 		except KeyboardInterrupt as e:
+			if board.debug:
+				for msg in sorted(board.debug):
+					stderr.write('\n\t\t\t\t\t%s(%d,%d,%d): %s' % msg)
 			if Cfg.VERBOSE:
 				stderr.write('\n' + str(board))
 			stderr.write('\nStack: ')
@@ -173,15 +176,19 @@ def setup(ospec):
 				stderr.write('empty')
 			stderr.write('\nAge: ')
 			stderr.write(str(board.age))
+			if (board.stats):
+				stderr.write('\nStats: ')
+				for k,v in sorted(board.stats.items()):
+					stderr.write('\n%s %s' % (str(v).rjust(24), k))
 			stderr.write('\n')
 
 	# Start up the circuit
 	circuit = circuit_gen()
 	circuit.send(None)
 
-	return circuit
+	return circuit, board
 
-def run(circuit):
+def run(circuit, board):
 	"""Run the circuit for each input byte"""
 	if Cfg.VERBOSE:
 		stderr.write('        HGFEDCBA        hgfedcba\n')
@@ -239,8 +246,10 @@ def run(circuit):
 				else:
 					stderr.write('             ')
 				if debug:
-					stderr.write('\t%s' % debug)
+					for msg in sorted(debug):
+						stderr.write('\n\t\t\t\t\t%s(%d,%d,%d): %s' % msg)
 				stderr.write('\n')
+
 			if not (status & chiplib.Board.WRITE_HOLD):
 				stdout.buffer.write(outchar)
 				if Cfg.NO_BUFFER:
@@ -250,6 +259,12 @@ def run(circuit):
 			if (status & chiplib.Board.TERMINATE):
 				break
 		if Cfg.VERBOSE:
+			stderr.write('\nAge: ')
+			stderr.write(str(board.age))
+			if (board.stats):
+				stderr.write('\nStats: ')
+				for k,v in sorted(board.stats.items()):
+					stderr.write('\n%s %s' % (str(v).rjust(24), k))
 			stderr.write('\n')
 	except StopIteration as e:
 		stderr.write('Execution halted\n')
@@ -258,5 +273,5 @@ def run(circuit):
 
 if __name__ == '__main__':
 	spec = init()
-	circuit = setup(spec)
-	run(circuit)
+	circuit, board = setup(spec)
+	run(circuit, board)

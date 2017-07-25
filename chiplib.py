@@ -77,7 +77,8 @@ class Board(object):
 		self.stackheadr = None
 		self.stackheadw = None
 		self.age = 0
-		self.debug = ''
+		self.debug = []
+		self.stats = defaultdict(int)
 
 		def prepareStack():
 			if self.stack:
@@ -114,6 +115,7 @@ class Board(object):
 			return None
 
 	def run(self, inbits):
+		self.debug = []
 		self.inbits = inbits
 		self.outbits = [0]*8
 		self.statuscode = 0
@@ -121,13 +123,15 @@ class Board(object):
 		self.stackctl['r'].clear()
 		self.stackheadr = None
 		self.stackheadw = None
+
 		self.age += 1
-		self.debug = ''
 
 		for rank in sorted(self.terminals.keys()):
 			for element in self.terminals[rank]:
 				if hasattr(element, 'pollInternal'):
+					#self.addDebug(element.lexeme, element.z, element.y, element.x, 'Performing internal poll')
 					element.pollInternal()
+					self.stats['poll.internal'] += 1
 				else:
 					# we have a special task function, not an actual element
 					task = element
@@ -142,8 +146,8 @@ class Board(object):
 
 	def addStatus(self, statuscode):
 		self.statuscode |= statuscode
-	def addDebug(self, debugMsg):
-		self.debug += str(debugMsg)
+	def addDebug(self, lexeme, z, y, x, msg):
+		self.debug.append((lexeme, z, y, x, msg))
 
 	def checkStatus(self, statuscode):
 		return self.statuscode & statuscode
@@ -239,6 +243,7 @@ class Element(object):
 		   a neighboring element. Enforces a soft recursion limit, and
 		   handles board edges."""
 		neighbor = self.getNeighbor(dir)
+		self.board.stats['poll.neighbor'] += 1
 		if neighbor is not None:
 			if Board.CUR_POLL_DEPTH < Board.MAX_POLL_DEPTH:
 				Board.CUR_POLL_DEPTH += 1
@@ -247,6 +252,8 @@ class Element(object):
 				return value
 			else:
 				# Soft recursion limit reached
+				self.board.stats['poll.overflow'] += 1
+				self.board.addDebug(self.lexeme, self.z, self.y, self.x, 'Giving up due to stack overflow')
 				return 0
 		else:
 			# Edge of board
@@ -326,6 +333,9 @@ class Cache(Element):
 					if dir == side:
 						continue
 					self.outValues[side] = self.outValues[side] or self.pollNeighbor(dir)
+				self.board.stats['cache.miss'] += 1
+			else:
+				self.board.stats['cache.hit'] += 1
 			return self.outValues[side]
 		else:
 			return 0
@@ -371,7 +381,7 @@ class Debug(Element):
 		        self.pollNeighbor('s') or\
 		        self.pollNeighbor('w') or\
 		        self.pollNeighbor('e')
-		self.board.addDebug('\n\t\t\t\t\t%s(%d,%d,%d): %s' % (self.lexeme, self.z, self.y, self.x, value))
+		self.board.addDebug(self.lexeme, self.z, self.y, self.x, value)
 
 class Delay(Element):
 	lexemes = {'Z':('ew','Z'), 'z':('we','z')}
