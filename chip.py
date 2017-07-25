@@ -7,7 +7,7 @@ from sys import argv, stdin, stdout, stderr, exit
 from getopt import getopt, GetoptError
 from optparse import OptionParser
 
-import tty, termios
+import time, termios, tty
 import chiplib
 
 class ConfigDict(dict):
@@ -152,11 +152,12 @@ def setup(ospec):
 		"""A generator representing the board's state and function"""
 		outbits = None
 		status = 0
+		sleep = 0
 		debug = ''
 		try:
 			while True:
-				inbits = yield (status, outbits, debug)
-				status, outbits, debug = board.run(inbits)
+				inbits = yield (status, outbits, sleep, debug)
+				status, outbits, sleep, debug = board.run(inbits)
 		except KeyboardInterrupt as e:
 			if board.debug:
 				for msg in sorted(board.debug):
@@ -232,7 +233,7 @@ def run(circuit, board):
 					stderr.write('                  →')
 	
 			# Execute a clock cycle
-			status, outbits, debug = circuit.send(inbits)
+			status, outbits, sleep, debug = circuit.send(inbits)
 	
 			# Output
 			outchar = bytes([int(''.join(map(str, outbits[::-1])), 2)])
@@ -258,6 +259,10 @@ def run(circuit, board):
 			# Early termination
 			if (status & chiplib.Board.TERMINATE):
 				break
+
+			# Sleep
+			if (sleep):
+				time.sleep(sleep)
 		if Cfg.VERBOSE:
 			stderr.write('\nAge: ')
 			stderr.write(str(board.age))

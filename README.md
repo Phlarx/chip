@@ -42,6 +42,9 @@ A Chip circuit is made up of the elements described here:
 | <code>?</code>        |   | Random; each cycle produces high or low randomly; each instance is a unique and independent source
 | <code>!</code>        |   | Pulse; produces a 1-tick pulse on the first cycle; useful for init tasks
 |                       |   |
+| <code>$</code>        |   | Sleep; induces a sleep before next cycle, depending on number of sides powered. From zero to four, in seconds: 0, 1/10, 1/4, 1/2, 1. Multiple sleep/pause elements are summed.
+| <code>Pp</code>       |   | Pause; induces a sleep before next cycle, depending on the current stack head. P sleeps for stack_head seconds, p for stack_head/256 seconds. Multiple sleep/pause elements are summed.
+|                       |   |
 | <code>»</code>        |   | diode; west is in, east is out, north and south ignored; form is (U+00BB)
 | <code>«</code>        |   | diode; horizontally mirrored of above; form is (U+00AB)
 | <code>⌐~</code>       |   | not diode; west is in, east is out, north and south ignored; first form is (U+2310)

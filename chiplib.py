@@ -71,6 +71,7 @@ class Board(object):
 		self.w = len(cboard[0][0])
 		self.inbits = [0]*8
 		self.outbits = [0]*8
+		self.sleep = 0
 		self.statuscode = 0
 		self.stackctl = {'w':set(), 'r':set()}
 		self.stack = []
@@ -118,6 +119,7 @@ class Board(object):
 		self.debug = []
 		self.inbits = inbits
 		self.outbits = [0]*8
+		self.sleep = 0
 		self.statuscode = 0
 		self.stackctl['w'].clear()
 		self.stackctl['r'].clear()
@@ -137,7 +139,7 @@ class Board(object):
 					task = element
 					task()
 
-		return (self.statuscode, self.outbits, self.debug)
+		return (self.statuscode, self.outbits, self.sleep, self.debug)
 
 	def readBit(self, index):
 		return self.inbits[index]
@@ -148,6 +150,8 @@ class Board(object):
 		self.statuscode |= statuscode
 	def addDebug(self, lexeme, z, y, x, msg):
 		self.debug.append((lexeme, z, y, x, msg))
+	def addSleep(self, sleepduration):
+		self.sleep += sleepduration
 
 	def checkStatus(self, statuscode):
 		return self.statuscode & statuscode
@@ -551,6 +555,32 @@ class OutBit(Element):
 		        self.pollNeighbor('e')
 		self.board.writeBit(self.index, value)
 
+class Pause(Element):
+	# pause for muliples of 1 sec, or of 1/256ths of a sec
+	lexemes = {'P':(1,'P'), 'p':(1/256,'p')}
+
+	def __init__(self, board, x, y, z, lexeme):
+		self.scale, lex = self.__class__.getFlavor(lexeme)
+		Element.__init__(self, board, x, y, z, lex)
+		board.registerInternal(self, 85) # is 85 ok?
+
+	@classmethod
+	def getFlavor(cls, lexeme):
+		try:
+			return cls.lexemes[lexeme]
+		except:
+			raise KeyError("'%s' is not a valid lexeme for a %s element" % (lexeme, cls.__name__))
+
+	def pollInternal(self):
+		if self.pollNeighbor('n') or\
+		   self.pollNeighbor('s') or\
+		   self.pollNeighbor('w') or\
+		   self.pollNeighbor('e'):
+			stack_peek = 0
+			for bit in self.board.stackheadr[::-1]:
+				stack_peek = (stack_peek << 1) | bit
+			self.board.addSleep(stack_peek * self.scale)
+
 class Pin(Element):
 	lexemes = 'Oo'
 
@@ -618,6 +648,22 @@ class Random(Element):
 			return self.value
 		else:
 			return 0
+
+class Sleep(Element):
+	# sleep for 1/10, 1/4, 1/2, or 1 sec.
+	lexemes = '$'
+	sleep_ramp = [0, 1/10, 1/4, 1/2, 1]
+
+	def __init__(self, board, x, y, z, lexeme):
+		Element.__init__(self, board, x, y, z, self.lexemes[0])
+		board.registerInternal(self, 85) # is 85 ok?
+
+	def pollInternal(self):
+		idx = self.pollNeighbor('n') +\
+		      self.pollNeighbor('s') +\
+		      self.pollNeighbor('w') +\
+		      self.pollNeighbor('e')
+		self.board.addSleep(self.sleep_ramp[idx])
 
 class Source(Element):
 	lexemes = '*'

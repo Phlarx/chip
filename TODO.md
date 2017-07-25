@@ -13,7 +13,7 @@
 - [x] Add flag for execution without stdin, really only useful with -o or -z
 - [ ] Allow arbitrary default values, via --ignore-eof XX, where XX is 2 digits hexadecimal
 - [ ] Add default values that count up from 0x00 instead of a constant value
-- [ ] Add a delay mechanism? (W for wait? $ for sleep? P for pause?) How? Options are read/peeked from stack, different delay per side, something else?
+- [x] Add a delay mechanism? ($ for sleep? P for pause?) How? Options are read/peeked from stack, different delay per side, something else?
 - [ ] Implement loop detection during cycle execution; warn to stdout, and return 0 immediately?
 - [ ] Maybe: Implement memoization during cycle execution (can be done manually via cache elements (K))
 - [ ] Optimization: Implement iterative calls for polling, rather than recursive
@@ -38,3 +38,4 @@
 - [ ] Update from optparse to argparse
 - [ ] Reevaluate StackControl -- does it really need to be more complex than Control?
 - [ ] Maybe: Improve efficiency of Cache (K) by caching in-values for each side as well as / instead of out-values
+- [ ] Centralize all registerInternal's, to get rid of priorities, just use an ordered list instead
