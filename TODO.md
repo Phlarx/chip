@@ -19,7 +19,7 @@
 - [ ] Optimization: Implement iterative calls for polling, rather than recursive
 - [x] Add debugging elements (X for examine?)
 - [x] Add mirrored adder, perhaps @
-- [ ] Add bookmarking/looping, when marker is powered it marks a jump-back point. When unpowered, jumps to that point. Multiple may be used, also, may jump forward if previously jumped back
+- [ ] Add bookmarking/looping, (V?) when marker is powered it marks a jump-back point. When unpowered, jumps to that point. Multiple may be used, also, may jump forward if previously jumped back
 - [x] Optimization: In case of output suppression S, skip polling output bit elements, since they become unnecessary
 - [x] Add pulse element (!?), on for first tick of execution, then off for all remaining cycles. For init stuff.
 - [ ] Add shift elements, wires that connect diagonally (Ll?), variant 1 connects n-w and s-e, variants 2 connects n-e and s-w
@@ -39,3 +39,6 @@
 - [ ] Reevaluate StackControl -- does it really need to be more complex than Control?
 - [ ] Maybe: Improve efficiency of Cache (K) by caching in-values for each side as well as / instead of out-values
 - [ ] Centralize all registerInternal's, to get rid of priorities, just use an ordered list instead
+
+# Unclaimed simple ascii
+Ii Qq Rr Uu Ww Yy % & _ "

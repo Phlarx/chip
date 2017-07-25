@@ -36,8 +36,8 @@ def init():
 		exit(0)
 
 	parser = OptionParser(usage='Usage: %prog [options] <chipspec>', version='%prog 0.1.4', conflict_handler='resolve')
-	parser.add_option('-e', '--escape', action='append', dest='esc_seqs', help='Use these characters as escape sequences for input. A default of ^C and ^D are included in immediate mode (-i), '+
-	                                    'unless an empty esc sequence is provided. If a sequence is multiple characters, they must be entered in order. All except the last are echoed to the script. '+
+	parser.add_option('-e', '--escape', action='append', dest='esc_seqs', help='Use these characters as escape sequences for input. A default of ^C and ^D are included in immediate mode (-i) when stdin is a tty, '+
+	                                    'unless an empty esc sequence is provided. If a sequence is multiple characters, they must be entered in order. All characters except the last are echoed to the script. '+
 	                                    'Multiple sequences may be defined.')
 	parser.add_option('-i', '--immediate', action='store_true', dest='no_buffer', default=False, help='flushes stdout immediately after each cycle, otherwise, default buffering is used. '+
 	                                       'Also sets input to raw mode, rather than cbreak mode.')
@@ -61,16 +61,15 @@ def init():
 		Cfg.DEFAULT_VALUE = bytes([0])
 
 	esc_seqs_str = []
-	if opts.esc_seqs:
-		if (not opts.no_buffer) or ('' in opts.esc_seqs):
-			esc_seqs_str = [seq for seq in opts.esc_seqs if seq]
-		else:
-			esc_seqs_str = ['\x03', '\x04'] + opts.esc_seqs
-	elif stdin.isatty():
+	if Cfg.NO_BUFFER and stdin.isatty():
 		esc_seqs_str = ['\x03', '\x04'] # By default, ^C or ^D will cause exit
+	if opts.esc_seqs:
+		if '' in opts.esc_seqs:
+			esc_seqs_str = []
+		esc_seqs_str += [seq for seq in opts.esc_seqs if seq]
 	Cfg.ESC_SEQS = tuple(set([seq.encode('utf-8').decode('unicode_escape').encode('utf-8') for seq in esc_seqs_str]))
 
-	if Cfg.ESC_SEQS:
+	if (Cfg.NO_BUFFER and stdin.isatty()) or opts.esc_seqs:
 		stderr.write('Escape sequences are: ' + repr(Cfg.ESC_SEQS) + '\n')
 
 	if len(args) == 1:
