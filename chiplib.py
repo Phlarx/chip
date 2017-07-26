@@ -80,6 +80,7 @@ class Board(object):
 		self.age = 0
 		self.debug = []
 		self.stats = defaultdict(int)
+		self.alerts = set()
 
 		def prepareStack():
 			if self.stack:
@@ -134,6 +135,9 @@ class Board(object):
 					#self.addDebug(element.lexeme, element.z, element.y, element.x, 'Performing internal poll')
 					element.pollInternal()
 					self.stats['poll.internal'] += 1
+					if 'overflow' in self.alerts:
+						self.addDebug(element.lexeme, element.z, element.y, element.x, 'Stack overflow started here')
+						self.alerts.discard('overflow')
 				else:
 					# we have a special task function, not an actual element
 					task = element
@@ -258,6 +262,7 @@ class Element(object):
 				# Soft recursion limit reached
 				self.board.stats['poll.overflow'] += 1
 				self.board.addDebug(self.lexeme, self.z, self.y, self.x, 'Giving up due to stack overflow')
+				self.board.alerts.add('overflow')
 				return 0
 		else:
 			# Edge of board
