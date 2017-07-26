@@ -181,6 +181,7 @@ def setup(ospec):
 				for k,v in sorted(board.stats.items()):
 					stderr.write('\n%s %s' % (str(v).rjust(24), k))
 			stderr.write('\n')
+			#raise e # Uncomment this for a stack trace. Usually *very* long.
 
 	# Start up the circuit
 	circuit = circuit_gen()

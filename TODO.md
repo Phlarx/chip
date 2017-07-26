@@ -38,7 +38,8 @@
 - [ ] Update from optparse to argparse
 - [ ] Reevaluate StackControl -- does it really need to be more complex than Control?
 - [ ] Maybe: Improve efficiency of Cache (K) by caching in-values for each side as well as / instead of out-values
-- [ ] Centralize all registerInternal's, to get rid of priorities, just use an ordered list instead
+- [ ] Centralize all registerInternal priorities's, to get rid of magic priorities, just use an ordered list instead
+- [ ] Make elements with pollInternal callable
 
 # Unclaimed simple ascii
 Ii Qq Rr Uu Ww Yy % & _ "

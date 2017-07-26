@@ -139,10 +139,12 @@ class Board(object):
 					if 'overflow' in self.alerts:
 						self.addDebug(element.lexeme, element.z, element.y, element.x, 'Stack overflow started here')
 						self.alerts.discard('overflow')
-				else:
+				elif hasattr(element, '__call__'):
 					# we have a special task function, not an actual element
-					task = element
-					task()
+					element()
+				else:
+					# something went horribly wrong
+					raise ValueError('Element %s is not a callable and not an internally-pollable element.' % repr(element))
 
 		return (self.statuscode, self.outbits, self.sleep, self.debug)
 
