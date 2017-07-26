@@ -1,7 +1,7 @@
 #!/usr/bin/python3 -bb
 #coding=utf-8
 #author Derek Anderson
-#interpreter v0.1.4
+#interpreter v0.1.5
 
 import random, subprocess, sys
 from collections import defaultdict
@@ -37,7 +37,7 @@ class Board(object):
 
 	def __init__(self):
 		self.cboard = None
-		self.terminals = defaultdict(set)
+		self.terminals = {cls:set() for cls in PRIORITYLIST}
 	def __str__(self):
 		if self.initialized():
 			out = ''
@@ -99,14 +99,16 @@ class Board(object):
 				# If we were writing, commit the write head
 				self.stack.append(self.stackheadw)
 
-		self.registerInternal(prepareStack, 1)
-		self.registerInternal(finalizeStack, 99)
+		self.registerInternal(prepareStack, DummyPrepare)
+		self.registerInternal(finalizeStack, DummyFinalize)
 
 	def initialized(self):
 		return self.cboard is not None
 
-	def registerInternal(self, element, rank):
-		self.terminals[rank].add(element)
+	def registerInternal(self, element, cls=None):
+		if cls is None:
+			cls = type(element)
+		self.terminals[cls].add(element)
 
 	def getElement(self, x, y, z):
 		if 0 <= x < self.w and\
@@ -129,8 +131,8 @@ class Board(object):
 
 		self.age += 1
 
-		for rank in sorted(self.terminals.keys()):
-			for element in self.terminals[rank]:
+		for cls in PRIORITYLIST:
+			for element in self.terminals[cls]:
 				if hasattr(element, 'pollInternal'):
 					#self.addDebug(element.lexeme, element.z, element.y, element.x, 'Performing internal poll')
 					element.pollInternal()
@@ -362,7 +364,7 @@ class Control(Element):
 
 	def __init__(self, board, x, y, z, lexeme):
 		Element.__init__(self, board, x, y, z, lexeme)
-		board.registerInternal(self, 80)
+		board.registerInternal(self)
 
 	def pollInternal(self):
 		if (   (self.lexeme == 'T' and self.board.checkStatus(Board.WRITE_HOLD) and self.board.checkStatus(Board.TERMINATE))
@@ -391,7 +393,7 @@ class Debug(Element):
 
 	def __init__(self, board, x, y, z, lexeme):
 		Element.__init__(self, board, x, y, z, self.lexemes[0])
-		board.registerInternal(self, 90)
+		board.registerInternal(self)
 
 	def pollInternal(self):
 		value = self.pollNeighbor('n') or\
@@ -409,7 +411,7 @@ class Delay(Element):
 		self.age = 0
 		self.currValue = 0
 		self.nextValue = 0
-		board.registerInternal(self, 80)
+		board.registerInternal(self)
 
 	@classmethod
 	def getFlavor(cls, lexeme):
@@ -479,7 +481,7 @@ class Memory(Element):
 		self.flavor, lex = self.__class__.getFlavor(lexeme)
 		Element.__init__(self, board, x, y, z, lex)
 		self.currValue = 0
-		board.registerInternal(self, 60)
+		board.registerInternal(self)
 
 	@classmethod
 	def getFlavor(cls, lexeme):
@@ -556,7 +558,7 @@ class OutBit(Element):
 	def __init__(self, board, x, y, z, lexeme):
 		Element.__init__(self, board, x, y, z, lexeme)
 		self.index = self.lexemes.index(lexeme)
-		board.registerInternal(self, 90)
+		board.registerInternal(self)
 
 	def pollInternal(self):
 		if self.board.checkStatus(Board.WRITE_HOLD):
@@ -575,7 +577,7 @@ class Pause(Element):
 	def __init__(self, board, x, y, z, lexeme):
 		self.scale, lex = self.__class__.getFlavor(lexeme)
 		Element.__init__(self, board, x, y, z, lex)
-		board.registerInternal(self, 85) # is 85 ok?
+		board.registerInternal(self)
 
 	@classmethod
 	def getFlavor(cls, lexeme):
@@ -669,7 +671,7 @@ class Sleep(Element):
 
 	def __init__(self, board, x, y, z, lexeme):
 		Element.__init__(self, board, x, y, z, self.lexemes[0])
-		board.registerInternal(self, 85) # is 85 ok?
+		board.registerInternal(self)
 
 	def pollInternal(self):
 		idx = self.pollNeighbor('n') +\
@@ -696,7 +698,7 @@ class StackBit(Element):
 	def __init__(self, board, x, y, z, lexeme):
 		Element.__init__(self, board, x, y, z, lexeme)
 		self.index = self.lexemes.index(lexeme)
-		board.registerInternal(self, 20)
+		board.registerInternal(self)
 
 	def pollInternal(self):
 		if self.board.getStackControl('w'):
@@ -718,7 +720,7 @@ class StackControl(Element):
 	def __init__(self, board, x, y, z, lexeme):
 		self.flavor, lex = self.__class__.getFlavor(lexeme)
 		Element.__init__(self, board, x, y, z, lex)
-		board.registerInternal(self, 10)
+		board.registerInternal(self)
 
 	@classmethod
 	def getFlavor(cls, lexeme):
@@ -846,6 +848,23 @@ class Xor(Element):
 ###                     ###
 #   End Element classes   #
 ###                     ###
+
+class DummyPrepare(object):
+	pass
+class DummyFinalize(object):
+	pass
+
+PRIORITYLIST = [DummyPrepare,
+		StackControl,
+		StackBit,
+		Memory,
+		Sleep,
+		Pause,
+		Delay,
+		Control,
+		OutBit,
+		Debug,
+		DummyFinalize]
 
 # Generate the set of all subclasses of Element
 classes = set()
