@@ -37,10 +37,10 @@
 - [ ] Add lexeme/element listing to help/usage message
 - [ ] Update from optparse to argparse (remember RawDescriptionHelpFormatter)
 - [ ] Reevaluate StackControl -- does it really need to be more complex than Control?
-- [ ] Maybe: Improve efficiency of Cache (K) by caching in-values for each side as well as / instead of out-values
+- [x] Maybe: Improve efficiency of Cache (K) by caching in-values for each side as well as / instead of out-values
 - [x] Centralize all registerInternal priorities's, to get rid of magic priorities, just use an ordered list instead
 - [x] Make elements with pollInternal callable
-- [ ] Optimization: Add age to memory, so that it's pollInternal is called once
+- [ ] Optimization: Add age to memory, so that it's pollInternal is called once (wait, would this actually be correct?)
 
 # Unclaimed simple ascii
 Ii Qq Rr Uu Ww Yy % & _ "

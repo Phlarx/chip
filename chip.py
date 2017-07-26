@@ -215,7 +215,6 @@ def run(circuit, board):
 							orig_settings = termios.tcgetattr(stdin)
 							tty.setraw(stdin)
 						inchar = stdin.buffer.read(1)
-						total_bytes += 1
 					finally:
 						if Cfg.NO_BUFFER and stdin.isatty():
 							termios.tcsetattr(stdin, termios.TCSADRAIN, orig_settings)
@@ -228,6 +227,7 @@ def run(circuit, board):
 					history += inchar
 					if history.endswith(Cfg.ESC_SEQS):
 						break
+				total_bytes += 1
 			inbin = bin(ord(inchar))[2:]
 			inbits = list(map(int, '0'*(8-len(inbin)) + inbin))[::-1]
 			if Cfg.VERBOSE:

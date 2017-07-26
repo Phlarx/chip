@@ -333,28 +333,34 @@ class And(Element):
 			return None
 
 class Cache(Element):
-	lexemes = 'K'
+	lexemes = {'K':(lambda s:[x for x in 'nsew' if x != s], 'K'),
+	           'k':(lambda s:[oppositeDir[s]] if s in 'nsew' else [], 'k')}
 
 	def __init__(self, board, x, y, z, lexeme):
-		Element.__init__(self, board, x, y, z, lexeme)
-		self.ages = {'n':0, 's':0, 'e':0, 'w':0}
-		self.outValues = {'n':0, 's':0, 'e':0, 'w':0}
+		self.flavor, lex = self.__class__.getFlavor(lexeme)
+		Element.__init__(self, board, x, y, z, lex)
+		self.inAges = {'n':0, 's':0, 'e':0, 'w':0}
+		self.inValues = {'n':0, 's':0, 'e':0, 'w':0}
 
-	# Make second flavor 'k' that only polls the opposite neighbor of each side?
+	@classmethod
+	def getFlavor(cls, lexeme):
+		try:
+			return cls.lexemes[lexeme]
+		except:
+			raise KeyError("'%s' is not a valid lexeme for a %s element" % (lexeme, cls.__name__))
 
 	def poll(self, side):
-		if side in self.outValues.keys():
-			if self.ages[side] != self.board.age:
-				self.ages[side] = self.board.age
-				self.outValues[side] = 0;
-				for dir in self.outValues.keys():
-					if dir == side:
-						continue
-					self.outValues[side] = self.outValues[side] or self.pollNeighbor(dir)
-				self.board.stats['cache.miss'] += 1
-			else:
-				self.board.stats['cache.hit'] += 1
-			return self.outValues[side]
+		if side in 'nsew':
+			outValue = 0
+			for dir in self.flavor(side):
+				if self.inAges[dir] != self.board.age:
+					self.inAges[dir] = self.board.age
+					self.inValues[dir] = self.pollNeighbor(dir)
+					self.board.stats['cache.miss'] += 1
+				else:
+					self.board.stats['cache.hit'] += 1
+				outValue = outValue or self.inValues[dir]
+			return outValue
 		else:
 			return None
 
