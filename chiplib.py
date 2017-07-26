@@ -134,6 +134,7 @@ class Board(object):
 				if hasattr(element, 'pollInternal'):
 					#self.addDebug(element.lexeme, element.z, element.y, element.x, 'Performing internal poll')
 					element.pollInternal()
+					element.calls += 1
 					self.stats['poll.internal'] += 1
 					if 'overflow' in self.alerts:
 						self.addDebug(element.lexeme, element.z, element.y, element.x, 'Stack overflow started here')
@@ -188,6 +189,7 @@ class Element(object):
 		self.y = y
 		self.z = z
 		self.lexeme = lexeme
+		self.calls = 0
 	def __str__(self):
 		return self.lexeme
 	def __repr__(self):
@@ -238,9 +240,9 @@ class Element(object):
 
 	def poll(self, side):
 		"""Called by neighboring elements to read a value. Must give 0
-		   for low, or 1 for high. Must return a value for all sides
-		   'n', 's', 'w', 'e', 'u', and 'd'."""
-		return 0
+		   for low, 1 for high, or None for no connection. Must handle
+		   side values 'n', 's', 'w', 'e', 'u', and 'd'."""
+		return None
 	def pollInternal(self):
 		"""Must be registered to the owning Board if implemented. Used
 		   by elements that need to run every cycle, but may not be
@@ -256,6 +258,10 @@ class Element(object):
 			if Board.CUR_POLL_DEPTH < Board.MAX_POLL_DEPTH:
 				Board.CUR_POLL_DEPTH += 1
 				value = neighbor.poll(oppositeDir[dir])
+				if value is None:
+					value = 0
+				else:
+					neighbor.calls += 1
 				Board.CUR_POLL_DEPTH -= 1
 				return value
 			else:
@@ -295,7 +301,7 @@ class Adder(Element):
 		elif side == 's':
 			return self.pollNeighbor('n') and self.pollNeighbor(self.flavor[1])
 		else:
-			return 0
+			return None
 
 class And(Element):
 	lexemes = {']':('ew',']'), '[':('we','[')}
@@ -321,7 +327,7 @@ class And(Element):
 		elif side == 's':
 			return self.pollNeighbor('n')
 		else:
-			return 0
+			return None
 
 class Cache(Element):
 	lexemes = 'K'
@@ -347,7 +353,7 @@ class Cache(Element):
 				self.board.stats['cache.hit'] += 1
 			return self.outValues[side]
 		else:
-			return 0
+			return None
 
 class Control(Element):
 	lexemes = 'TtSs'
@@ -423,7 +429,7 @@ class Delay(Element):
 			else:
 				return self.nextValue
 		else:
-			return 0
+			return None
 
 class Diode(Element):
 	lexemes = {'»':('ew','»'), '«':('we','«')}
@@ -443,7 +449,7 @@ class Diode(Element):
 		if side == self.flavor[0]:
 			return self.pollNeighbor(self.flavor[1])
 		else:
-			return 0
+			return None
 
 class Empty(Element):
 	lexemes = ' '
@@ -462,7 +468,7 @@ class InBit(Element):
 		if side in 'nswe':
 			return self.board.readBit(self.index)
 		else:
-			return 0
+			return None
 
 class Memory(Element):
 	lexemes = {'M':('ew','M'), 'm':('we','m')}
@@ -493,7 +499,7 @@ class Memory(Element):
 		elif side == 's':
 			return self.pollNeighbor('n')
 		else:
-			return 0
+			return None
 
 class Not(Element):
 	lexemes = {'⌐~':('ew','⌐'), '¬÷':('we','¬')}
@@ -514,7 +520,7 @@ class Not(Element):
 		if side == self.flavor[0]:
 			return 1 - self.pollNeighbor(self.flavor[1])
 		else:
-			return 0
+			return None
 
 class Or(Element):
 	lexemes = {')':('ew',')'), '(':('we','(')}
@@ -540,7 +546,7 @@ class Or(Element):
 		elif side == 's':
 			return self.pollNeighbor('n')
 		else:
-			return 0
+			return None
 
 class OutBit(Element):
 	lexemes = 'abcdefgh'
@@ -635,7 +641,7 @@ class Pulse(Element):
 			else:
 				return 0
 		else:
-			return 0
+			return None
 
 class Random(Element):
 	lexemes = '?'
@@ -652,7 +658,7 @@ class Random(Element):
 				self.age = self.board.age
 			return self.value
 		else:
-			return 0
+			return None
 
 class Sleep(Element):
 	# sleep for 1/10, 1/4, 1/2, or 1 sec.
@@ -680,7 +686,7 @@ class Source(Element):
 		if side in 'nswe':
 			return 1
 		else:
-			return 0
+			return None
 
 class StackBit(Element):
 	lexemes = '01234567'
@@ -702,7 +708,7 @@ class StackBit(Element):
 		if side in 'nswe' and self.board.getStackControl('r'):
 			return self.board.readStackBit(self.index)
 		else:
-			return 0
+			return None
 
 class StackControl(Element):
 	lexemes = {'9':('w','9'), '8':('r','8')}
@@ -760,7 +766,7 @@ class Switch(Element):
 			else:
 				return 0
 		else:
-			return 0
+			return None
 
 class Wire(Element):
 	lexemes = {'+┼':('nswe','┼'), '|│':('ns','│'), '-─':('ew','─'),
@@ -789,7 +795,7 @@ class Wire(Element):
 					break
 			return value
 		else:
-			return 0
+			return None
 
 class WireCross(Element):
 	lexemes = '×x'
@@ -807,7 +813,7 @@ class WireCross(Element):
 		elif side == 'e':
 			return self.pollNeighbor('w')
 		else:
-			return 0
+			return None
 
 class Xor(Element):
 	lexemes = {'}':('ew','}'), '{':('we','{')}
@@ -833,7 +839,7 @@ class Xor(Element):
 		elif side == 's':
 			return self.pollNeighbor('n')
 		else:
-			return 0
+			return None
 
 ###                     ###
 #   End Element classes   #
