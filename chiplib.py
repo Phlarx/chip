@@ -133,20 +133,7 @@ class Board(object):
 
 		for cls in PRIORITYLIST:
 			for element in self.terminals[cls]:
-				if hasattr(element, 'pollInternal'):
-					#self.addDebug(element.lexeme, element.z, element.y, element.x, 'Performing internal poll')
-					element.pollInternal()
-					element.calls += 1
-					self.stats['poll.internal'] += 1
-					if 'overflow' in self.alerts:
-						self.addDebug(element.lexeme, element.z, element.y, element.x, 'Stack overflow started here')
-						self.alerts.discard('overflow')
-				elif hasattr(element, '__call__'):
-					# we have a special task function, not an actual element
-					element()
-				else:
-					# something went horribly wrong
-					raise ValueError('Element %s is not a callable and not an internally-pollable element.' % repr(element))
+				element()
 
 		return (self.statuscode, self.outbits, self.sleep, self.debug)
 
@@ -198,6 +185,15 @@ class Element(object):
 		return self.lexeme
 	def __repr__(self):
 		return self.__class__.__name__ + '(' + self.__str__() + ')'
+	def __call__(self):
+		#self.addDebug('Performing internal poll')
+		retval = self.pollInternal()
+		self.calls += 1
+		self.board.stats['poll.internal'] += 1
+		if 'overflow' in self.board.alerts:
+			self.addDebug('Stack overflow started here')
+			self.board.alerts.discard('overflow')
+		return retval
 
 	@classmethod
 	def getValidLexemes(cls):
@@ -271,7 +267,7 @@ class Element(object):
 			else:
 				# Soft recursion limit reached
 				self.board.stats['poll.overflow'] += 1
-				self.board.addDebug(self.lexeme, self.z, self.y, self.x, 'Giving up due to stack overflow')
+				self.addDebug('Giving up due to stack overflow')
 				self.board.alerts.add('overflow')
 				return 0
 		else:
@@ -280,6 +276,9 @@ class Element(object):
 
 	def neighborType(self, dir):
 		return type(self.getNeighbor(dir))
+
+	def addDebug(self, msg):
+		self.board.addDebug(self.lexeme, self.z, self.y, self.x, msg)
 
 ###                       ###
 #   Begin Element Classes   #
@@ -400,7 +399,7 @@ class Debug(Element):
 		        self.pollNeighbor('s') or\
 		        self.pollNeighbor('w') or\
 		        self.pollNeighbor('e')
-		self.board.addDebug(self.lexeme, self.z, self.y, self.x, value)
+		self.addDebug(value)
 
 class Delay(Element):
 	lexemes = {'Z':('ew','Z'), 'z':('we','z')}

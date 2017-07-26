@@ -39,7 +39,7 @@
 - [ ] Reevaluate StackControl -- does it really need to be more complex than Control?
 - [ ] Maybe: Improve efficiency of Cache (K) by caching in-values for each side as well as / instead of out-values
 - [x] Centralize all registerInternal priorities's, to get rid of magic priorities, just use an ordered list instead
-- [ ] Make elements with pollInternal callable
+- [x] Make elements with pollInternal callable
 - [ ] Optimization: Add age to memory, so that it's pollInternal is called once
 
 # Unclaimed simple ascii
