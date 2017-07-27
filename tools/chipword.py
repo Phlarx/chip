@@ -54,7 +54,7 @@ for chunk in [word[i:i+128] for i in range(0, len(word), 128)]:
 	b += ["".join([(")" if x & 0x02 else "x") for x in chunk]) + "b"]
 	a += ["".join([(")" if x & 0x01 else "x") for x in chunk]) + "a"]
 
-print("\n".join(["*Z~.\n,--'\n>" + "-KZ".join(p) + "t",
+print("\n".join(["!" + "-KZ".join(p) + "t",
 		 " ".join(h), " ".join(g),
 		 " ".join(f), " ".join(e),
 		 " ".join(d), " ".join(c),
