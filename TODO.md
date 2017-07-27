@@ -34,8 +34,8 @@
 - [x] BUG: empty lines at beginning of layer are trimmed, only valid if empty on all layers
 - [ ] BUG: fix wire loop polling; it is highly inefficient, and sometimes incorrect. May be partially solved by general loop detection
 - [x] Add command line parameter to terminate input after N bytes (-cN)?
-- [ ] Add lexeme/element listing to help/usage message
-- [ ] Update from optparse to argparse (remember RawDescriptionHelpFormatter)
+- [x] Add lexeme/element listing to help/usage message
+- [x] Update from optparse to argparse (remember RawDescriptionHelpFormatter)
 - [ ] Reevaluate StackControl -- does it really need to be more complex than Control?
 - [x] Maybe: Improve efficiency of Cache (K) by caching in-values for each side as well as / instead of out-values
 - [x] Centralize all registerInternal priorities's, to get rid of magic priorities, just use an ordered list instead
