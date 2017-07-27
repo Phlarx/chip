@@ -7,7 +7,7 @@ from sys import argv, stdin, stdout, stderr, exit
 from getopt import getopt, GetoptError
 from optparse import OptionParser
 
-import time, termios, tty
+import random, time, termios, tty
 import chiplib
 
 class ConfigDict(dict):
@@ -20,14 +20,38 @@ class ConfigDict(dict):
 			raise KeyError(name)
 Cfg = ConfigDict(
 	CUTOFF_BYTES=-1,
-	DEFAULT_VALUE=bytes([0]),
 	ESC_SEQS=tuple(),
+	GENERATOR=None,
 	IGNORE_EOF=False,
 	NEWLINE=False,
 	NO_BUFFER=False,
 	VERBOSE=False,
 	WITHOUT_STDIN=False
 )
+
+def prepareGenerator(template):
+	def inputGenerator():
+		age = 0
+		while(True):
+			value = list(template.upper())
+
+			if value[0] == 'I':
+				value[0] = '0123456789ABCDEF'[(age >> 4) & 15]
+			elif value[0] == 'J':
+				value[0] = '0123456789ABCDEF'[~((age >> 4) & 15)]
+			elif value[0] == 'K':
+				value[0] = random.choice('0123456789ABCDEF')
+
+			if value[1] == 'I':
+				value[1] = '0123456789ABCDEF'[age & 15]
+			elif value[1] == 'J':
+				value[1] = '0123456789ABCDEF'[~(age & 15)]
+			elif value[1] == 'K':
+				value[1] = random.choice('0123456789ABCDEF')
+
+			yield bytes([int(''.join(value), 16)])
+			age = (age + 1) % 256
+	return inputGenerator()
 
 def init():
 	"""Perform initialization tasks"""
@@ -41,27 +65,31 @@ def init():
 	parser.add_option('-e', '--escape', action='append', dest='esc_seqs', metavar='SEQ', help='Use these characters as escape sequences for input. A default of ^C and ^D are included in immediate mode (-i) when stdin is a tty, '+
 	                                    'unless an empty esc sequence is provided. If a sequence is multiple characters, they must be entered in order. All characters except the last are echoed to the script. '+
 	                                    'Multiple sequences may be defined.')
+	parser.add_option('-g', '--generate', action='store', dest='generator', default='', type='string', metavar='XX', help='When input is exhausted, instead of terminating, generate values defined by XX. ' +
+	                                      'XX is two digits of base 19, translated to base 16; digit I means count up, J means count down, K means random value. Place values are respected, so IF means that ' +
+	                                      'the low four bits are always 1, and the upper four bits will increment every 16 cycles. Any counting starts at the end of stdin. Case insensitive.')
 	parser.add_option('-i', '--immediate', action='store_true', dest='no_buffer', default=False, help='flushes stdout immediately after each cycle, otherwise, default buffering is used. '+
 	                                       'Also sets input to raw mode, rather than cbreak mode.')
 	parser.add_option('-n', '--extra-newline', action='store_true', dest='extra_newline', default=False, help='provides an extra newline to STDOUT at the end of execution, regardless of the method of termination')
-	parser.add_option('-o', '--ignore-eof-ones', action='store_true', dest='ignore_eof_o', default=False, help='when input is exhausted, instead of terminating, provides one values (0xff) until the circuit terminates itself')
+	parser.add_option('-o', '--generate-ones', action='store_const', dest='generator', const='FF', help='When input is exhausted, instead of terminating, generate one values (0xff) until the circuit terminates itself.' +
+	                                           'Equivalent to --generate=FF')
 	parser.add_option('-v', '--verbose', action='count', dest='verbose', default=0, help='enables verbose output; shows the parsed circuitry and input/output for each cycle')
 	parser.add_option('-V', '--version', action='callback', callback=version_callback, help="show interpreter's version number and exit")
-	parser.add_option('-w', '--without-stdin', action='store_true', dest='without', default=False, help='the program uses the default value (set by -z or -o), instead of reading from STDIN. By itself, implies -z')
-	parser.add_option('-z', '--ignore-eof-zeroes', action='store_true', dest='ignore_eof_z', default=False, help='when input is exhausted, instead of terminating, provides zero values (0x00) until the circuit terminates itself')
+	parser.add_option('-w', '--without-stdin', action='store_true', dest='without', default=False, help='The program uses the default value (set by --generate), instead of reading from STDIN. By itself, implies --generate=00')
+	parser.add_option('-z', '--generate-zeroes', action='store_const', dest='generator', const='00', help='When input is exhausted, instead of terminating, generate zero values (0x00) until the circuit terminates itself. ' +
+	                                             'Equivalent to --generate=00')
 	opts, args = parser.parse_args()
 
+	if opts.without and not opts.generator:
+		opts.generator = '00'
+
 	Cfg.CUTOFF_BYTES = opts.cutoff_bytes
-	Cfg.IGNORE_EOF = opts.ignore_eof_z or opts.ignore_eof_o
+	Cfg.IGNORE_EOF = bool(opts.generator)
+	Cfg.GENERATOR = prepareGenerator(opts.generator)
 	Cfg.NEWLINE = opts.extra_newline
+	Cfg.NO_BUFFER = opts.no_buffer
 	Cfg.VERBOSE = bool(opts.verbose)
 	Cfg.WITHOUT_STDIN = opts.without
-	Cfg.NO_BUFFER = opts.no_buffer
-
-	if opts.ignore_eof_o:
-		Cfg.DEFAULT_VALUE = bytes([255])
-	else:
-		Cfg.DEFAULT_VALUE = bytes([0])
 
 	esc_seqs_str = []
 	if Cfg.NO_BUFFER and stdin.isatty():
@@ -198,7 +226,7 @@ def run(circuit, board):
 		stderr.write('        HGFEDCBA        hgfedcba\n')
 	status = 0
 	total_bytes = 0
-	inchar = Cfg.DEFAULT_VALUE
+	inchar = bytes([254])
 	history = b''
 	try:
 		while True:
@@ -208,7 +236,7 @@ def run(circuit, board):
 					# we're done here
 					break
 				if Cfg.WITHOUT_STDIN:
-					inchar = Cfg.DEFAULT_VALUE
+					inchar = next(Cfg.GENERATOR)
 				else:
 					try:
 						if Cfg.NO_BUFFER and stdin.isatty():
@@ -219,9 +247,10 @@ def run(circuit, board):
 						if Cfg.NO_BUFFER and stdin.isatty():
 							termios.tcsetattr(stdin, termios.TCSADRAIN, orig_settings)
 					if len(inchar) == 0:
-						# EOF
+						# EOF (optimization: switch to without stdin mode for future)
 						if Cfg.IGNORE_EOF:
-							inchar = Cfg.DEFAULT_VALUE
+							inchar = next(Cfg.GENERATOR)
+							Cfg.WITHOUT_STDIN = True
 						else:
 							break
 					history += inchar

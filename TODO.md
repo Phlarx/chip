@@ -4,15 +4,15 @@
 - [ ] Write documentation for compiler/interpreter/what-cha-ma-call-it
 - [ ] Use each element in at least one sample spec
 - [ ] Better names/documentation for sample specs
-- [ ] Optimize value invalidation for stack control and similar
+- [x] Optimize value invalidation for stack control and similar
 - [ ] Detangle the mess that is the compiler (i.e. make it not shite)
 - [ ] Add multiple levels of verbosity? Perhaps a more detailed printout of internal state?
 - [ ] Do some form of testing, besides basic manual tests
 - [x] Implement shebang support (i.e. get the compiler to ignore it)
 - [ ] Allow stdin to be defined from positional file argument (but not stdout?)
 - [x] Add flag for execution without stdin, really only useful with -o or -z
-- [ ] Allow arbitrary default values, via --ignore-eof XX, where XX is 2 digits hexadecimal. no, use --generate XX, maybe base 18?
-- [ ] Add default values that count up from 0x00 instead of a constant value
+- [x] Allow arbitrary default values, via --ignore-eof XX, where XX is 2 digits hexadecimal. no, use --generate XX, maybe base 18?
+- [x] Add default values that count up from 0x00 instead of a constant value
 - [x] Add a delay mechanism? ($ for sleep? P for pause?) How? Options are read/peeked from stack, different delay per side, something else?
 - [ ] Implement loop detection during cycle execution; warn to stdout, and return 0 immediately?
 - [ ] Maybe: Implement memoization during cycle execution (can be done manually via cache elements (K))
