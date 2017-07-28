@@ -6,7 +6,7 @@
 - [ ] Better names/documentation for sample specs
 - [x] Optimize value invalidation for stack control and similar
 - [ ] Detangle the mess that is the compiler (i.e. make it not shite)
-- [ ] Add multiple levels of verbosity? Perhaps a more detailed printout of internal state?
+- [x] Add multiple levels of verbosity? Perhaps a more detailed printout of internal state?
 - [ ] Do some form of testing, besides basic manual tests
 - [x] Implement shebang support (i.e. get the compiler to ignore it)
 - [ ] Allow stdin to be defined from positional file argument (but not stdout?)

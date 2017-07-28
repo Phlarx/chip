@@ -64,6 +64,35 @@ class Board(object):
 		else:
 			return '<Board Uninitialized>'
 
+	def heatmap(self):
+		"""This function does not work on Windows because color... perhaps integrate Colorama?"""
+		if self.initialized() and (self.d*self.h*self.w != 0):
+			maxv = max([max([max([element.calls for element in row]) for row in layer]) for layer in self.cboard])
+			maxv = maxv if maxv > 0 else 1
+			ramp = ['\033[36m', '\033[34m', '\033[32m', '\033[33m', '\033[31m']
+			reset = '\033[0m'
+			scale = (len(ramp)*.999)/maxv
+			header = '(' + str(maxv) + ') ' + ' '.join([color + str(int(index/scale)) for index, color in list(enumerate(ramp))[::-1]]) + reset + '\n'
+			out = header
+			# Find out how many frames fit in columns
+			n = (COLUMNS-2)//(self.w+1)
+			n = 1 if n == 0 else n
+			# Spread the frames evenly across rows
+			n = (self.d+n-1)//n
+			n = (self.d+n-1)//n
+
+			for chunk in [self.cboard[n*i:n*(i+1)] for i in range((self.d+n-1)//n)]:
+				lines = [reset + ' ║']*(self.h+2)
+				lines[0] = ' ╔' + '╦'.join(['═'*self.w]*len(chunk)) + '╗'
+				for layer in chunk:
+					for j in range(self.h):
+						lines[j+1] += ''.join(map(lambda elem: ramp[int(elem.calls*scale)] + str(elem), layer[j])) + reset + '║'
+				lines[-1] = ' ╚' + '╩'.join(['═'*self.w]*len(chunk)) + '╝'
+				out += '\n'.join(lines) + '\n'
+			return out
+		else:
+			return ''
+
 	def initialize(self, cboard):
 		self.cboard = cboard
 		self.d = len(cboard)

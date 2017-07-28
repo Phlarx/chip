@@ -89,8 +89,9 @@ def init():
 	parser.add_argument('-o', '--generate-one', action='store_const', dest='generator', const='FF', help='When input is exhausted, '+
 	                                            'instead of terminating, generate one values (0xff) until the circuit terminates '+
 	                                            'itself. Equivalent to --generate=FF.')
-	parser.add_argument('-v', '--verbose', action='count', dest='verbose', default=0, help='Enables verbose output; shows the '+
-	                                       'parsed circuitry and input/output for each cycle.')
+	parser.add_argument('-v', '--verbose', action='count', dest='verbose', default=0, help='Enables verbose output; effect is '+
+	                                       'cumulative. Level 1 shows input/output for each cycle. Level 2 adds the parsed '+
+	                                       'circuitry and statistics. Level 3 shows a heatmap (using ANSI colors).')
 	parser.add_argument('-V', '--version', action='version', version=('Chip interpreter v'+VERSION), help="Show interpreter's "+
 	                                       'version number and exit.')
 	parser.add_argument('-w', '--without-stdin', action='store_true', dest='without', default=False, help='The program uses the '+
@@ -109,7 +110,7 @@ def init():
 	Cfg.GENERATOR = prepareGenerator(args.generator)
 	Cfg.NEWLINE = args.extra_newline
 	Cfg.NO_BUFFER = args.no_buffer
-	Cfg.VERBOSE = bool(args.verbose)
+	Cfg.VERBOSE = args.verbose
 	Cfg.WITHOUT_STDIN = args.without
 
 	esc_seqs_str = []
@@ -196,7 +197,7 @@ def setup(ospec):
 
 	board = chiplib.Board()
 	board.initialize([[[chiplib.getElementType(char)(board, x, y, z, char) for x,char in enumerate(row)] for y,row in enumerate(layer)] for z,layer in enumerate(spec2)])
-	if Cfg.VERBOSE:
+	if Cfg.VERBOSE > 1:
 		stderr.write(str(board) + '\n')
 
 	def circuit_gen():
@@ -213,11 +214,11 @@ def setup(ospec):
 			if board.debug:
 				for msg in sorted(board.debug):
 					stderr.write('\n\t\t\t\t\t%s(%d,%d,%d): %s' % msg)
-			if Cfg.VERBOSE:
-				stderr.write('\n' + str(board))
+			if Cfg.VERBOSE > 2:
+				stderr.write('\n' + board.heatmap())
 			stderr.write('\nStack: ')
 			if board.stack:
-				if VERBOSE or len(board.stack) < 9:
+				if Cfg.VERBOSE > 1 or len(board.stack) < 9:
 					stderr.write(' '.join(map(lambda v:''.join(map(str, v[::-1])), board.stack[::-1])))
 				else:
 					stderr.write(' '.join(map(lambda v:''.join(map(str, v[::-1])), board.stack[:-9:-1])))
@@ -243,7 +244,7 @@ def setup(ospec):
 
 def run(circuit, board):
 	"""Run the circuit for each input byte"""
-	if Cfg.VERBOSE:
+	if Cfg.VERBOSE > 0:
 		stderr.write('        HGFEDCBA        hgfedcba\n')
 	status = 0
 	total_bytes = 0
@@ -280,7 +281,7 @@ def run(circuit, board):
 				total_bytes += 1
 			inbin = bin(ord(inchar))[2:]
 			inbits = list(map(int, '0'*(8-len(inbin)) + inbin))[::-1]
-			if Cfg.VERBOSE:
+			if Cfg.VERBOSE > 0:
 				if not (status & chiplib.Board.READ_HOLD):
 					if 0 <= inchar[0] < 32 or inchar[0] == 127:
 						inc = '�'
@@ -295,7 +296,7 @@ def run(circuit, board):
 	
 			# Output
 			outchar = bytes([int(''.join(map(str, outbits[::-1])), 2)])
-			if Cfg.VERBOSE:
+			if Cfg.VERBOSE > 0:
 				if not (status & chiplib.Board.WRITE_HOLD):
 					if 0 <= outchar[0] < 32 or outchar[0] == 127:
 						outc = '�'
@@ -304,9 +305,19 @@ def run(circuit, board):
 					stderr.write('  %s\t%s' % (outc, ''.join(map(str, outbits[::-1]))))
 				else:
 					stderr.write('             ')
-				if debug:
-					for msg in sorted(debug):
-						stderr.write('\n\t\t\t\t\t%s(%d,%d,%d): %s' % msg)
+				if Cfg.VERBOSE > 1:
+					if debug:
+						for msg in sorted(debug):
+							stderr.write('\n\t\t\t\t\t%s(%d,%d,%d): %s' % msg)
+					if board.stack:
+						stderr.write('\n\t\t\t\t\tStack: ')
+						if len(board.stack) < 9:
+							stderr.write(' '.join(map(lambda v:''.join(map(str, v[::-1])), board.stack[::-1])))
+						else:
+							stderr.write(' '.join(map(lambda v:''.join(map(str, v[::-1])), board.stack[:-9:-1])))
+							stderr.write(' ... ')
+							stderr.write(str(len(board.stack)-8))
+							stderr.write('more')
 				stderr.write('\n')
 
 			if not (status & chiplib.Board.WRITE_HOLD):
@@ -321,7 +332,10 @@ def run(circuit, board):
 			# Sleep
 			if (sleep):
 				time.sleep(sleep)
-		if Cfg.VERBOSE:
+		if Cfg.VERBOSE > 1:
+			if Cfg.VERBOSE > 2:
+				stderr.write('\n')
+				stderr.write(board.heatmap())
 			stderr.write('\nAge: ')
 			stderr.write(str(board.age))
 			if (board.stats):
