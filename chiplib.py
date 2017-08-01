@@ -282,8 +282,8 @@ class Element(object):
 		   a neighboring element. Enforces a soft recursion limit, and
 		   handles board edges."""
 		neighbor = self.getNeighbor(dir)
-		self.board.stats['poll.neighbor'] += 1
 		if neighbor is not None:
+			self.board.stats['poll.neighbor'] += 1
 			if Board.CUR_POLL_DEPTH < Board.MAX_POLL_DEPTH:
 				Board.CUR_POLL_DEPTH += 1
 				value = neighbor.poll(oppositeDir[dir])
