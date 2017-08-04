@@ -76,10 +76,10 @@ def init():
 	                                      'the script. Multiple sequences may be defined.')
 	parser.add_argument('-g', '--generate', action='store', dest='generator', default='', type=str, metavar='XX', help='When input '+
 	                                        'is exhausted, instead of terminating, generate values defined by XX. XX is two digits '+
-	                                        'of base 19, translated to base 16; digit I means count up, J means count down, K means '+
-	                                        "random value. Place values are respected, so 'IF' means that the low four bits are "+
-	                                        'always 1, and the upper four bits will increment every 16 cycles. Any counting starts '+
-	                                        'at the end of stdin. Case insensitive.')
+	                                        "of base 16, or special characters 'I', 'J', or 'K'. 'I' means count up, 'J' means "+
+	                                        "count down, 'K' means random value. Place values are respected, so 'I5' means that the "+
+	                                        'low four bits are always 0101, and the upper four bits will increment every 16 cycles. '+
+	                                        'Any counting starts at the end of stdin. Case insensitive.')
 	parser.add_argument('-h', '--help', action='help', help='Show this help message and exit.')
 	parser.add_argument('-i', '--immediate', action='store_true', dest='no_buffer', default=False, help='Flushes stdout immediately '+
 	                                         'after each cycle, otherwise, default buffering is used. Also sets input to raw mode, '+

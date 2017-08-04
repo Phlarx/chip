@@ -735,7 +735,7 @@ class StackBit(Element):
 		board.registerInternal(self)
 
 	def pollInternal(self):
-		if self.board.getStackControl('w'):
+		if self.board.getStackControl('w'): # this condition is unnecessary, but is for optimization
 			value = (0 if self.neighborType('n') == self.__class__ else self.pollNeighbor('n')) or\
 			        (0 if self.neighborType('s') == self.__class__ else self.pollNeighbor('s')) or\
 			        (0 if self.neighborType('w') == self.__class__ else self.pollNeighbor('w')) or\
@@ -743,8 +743,9 @@ class StackBit(Element):
 			self.board.writeStackBit(self.index, value)
 
 	def poll(self, side):
-		if side in 'nswe' and self.board.getStackControl('r'):
-			return self.board.readStackBit(self.index)
+		if side in 'nswe':
+			value = self.board.readStackBit(self.index)
+			return value
 		else:
 			return None
 
