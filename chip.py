@@ -280,9 +280,9 @@ def run(circuit, board):
 								Cfg.WITHOUT_STDIN = True
 							else:
 								break
-				history += inchar
-				if history.endswith(Cfg.ESC_SEQS):
-					break
+					history += inchar
+					if history.endswith(Cfg.ESC_SEQS):
+						break
 				index += 1
 				total_bytes += 1
 			inbin = bin(ord(inchar))[2:]
