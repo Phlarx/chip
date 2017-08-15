@@ -110,6 +110,7 @@ class Board(object):
 		self.debug = []
 		self.stats = defaultdict(int)
 		self.alerts = set()
+		self.jump = None
 
 		def prepareStack():
 			if self.stack:
@@ -124,9 +125,11 @@ class Board(object):
 			if self.getStackControl('r') and self.stack:
 				# If we were reading, not only peeking, actually pop the stack now
 				self.stack.pop()
+				self.stats['stack.pop'] += 1
 			if self.getStackControl('w'):
 				# If we were writing, commit the write head
 				self.stack.append(self.stackheadw)
+				self.stats['stack.push'] += 1
 
 		self.registerInternal(prepareStack, DummyPrepare)
 		self.registerInternal(finalizeStack, DummyFinalize)
@@ -157,6 +160,7 @@ class Board(object):
 		self.stackctl['r'].clear()
 		self.stackheadr = None
 		self.stackheadw = None
+		self.jump = None
 
 		self.age += 1
 
@@ -164,7 +168,7 @@ class Board(object):
 			for element in self.terminals[cls]:
 				element()
 
-		return (self.statuscode, self.outbits, self.sleep, self.debug)
+		return (self.statuscode, self.outbits, self.sleep, self.debug, self.jump)
 
 	def readBit(self, index):
 		return self.inbits[index]
@@ -177,6 +181,27 @@ class Board(object):
 		self.debug.append((lexeme, z, y, x, msg))
 	def addSleep(self, sleepduration):
 		self.sleep += sleepduration
+
+	def setJump(self, jump):
+		if self.jump is None:
+			self.jump = jump
+		else:
+			# multiple jumps were attempted
+			# prioritize small (2) to large (5) positive,
+			# then large (-5) to small (-2) negative
+			# (zero condsidered positive)
+			self.addDebug(' ', 0, 0, 0, '[WARN] Multiple jumps were attempted')
+			self.stats['jump.multi'] += 1
+			if jump >= 0:
+				if self.jump >= 0:
+					self.jump = min(self.jump, jump)
+				else:
+					self.jump = jump
+			else:
+				if self.jump >= 0:
+					pass
+				else:
+					self.jump = min(self.jump, jump)
 
 	def checkStatus(self, statuscode):
 		return self.statuscode & statuscode
@@ -360,6 +385,33 @@ class And(Element):
 			return self.pollNeighbor('n')
 		else:
 			return None
+
+class Bookmark(Element):
+	lexemes = 'V'
+
+	def __init__(self, board, x, y, z, lexeme):
+		Element.__init__(self, board, x, y, z, self.lexemes[0])
+		board.registerInternal(self)
+		self.state = 0
+		self.mark = None
+
+	def pollInternal(self):
+		value = self.pollNeighbor('n') or\
+		        self.pollNeighbor('s') or\
+		        self.pollNeighbor('w') or\
+		        self.pollNeighbor('e')
+		if self.state == value:
+			pass
+		else:
+			self.state = value
+			if self.state:
+				# mark
+				self.mark = self.board.age
+			else:
+				# recall
+				distance = self.board.age+1 - self.mark
+				self.mark = None
+				self.board.setJump(-distance)
 
 class Cache(Element):
 	lexemes = {'K':(lambda s:[x for x in 'nsew' if x != s], 'K'),
@@ -896,6 +948,7 @@ PRIORITYLIST = [DummyPrepare,
 		Sleep,
 		Pause,
 		Delay,
+		Bookmark,
 		Control,
 		OutBit,
 		Debug,

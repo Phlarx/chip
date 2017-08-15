@@ -19,7 +19,7 @@
 - [ ] Optimization: Implement iterative calls for polling, rather than recursive
 - [x] Add debugging elements (X for examine?)
 - [x] Add mirrored adder, perhaps @
-- [ ] Add bookmarking/looping, (V?) when marker is powered it marks a jump-back point. When unpowered, jumps to that point. Multiple may be used, also, may jump forward if previously jumped back
+- [x] Add bookmarking/looping, (V?) when marker is powered it marks a jump-back point. When unpowered, jumps to that point. Multiple may be used, also, may jump forward if previously jumped back
 - [x] Optimization: In case of output suppression S, skip polling output bit elements, since they become unnecessary
 - [x] Add pulse element (!?), on for first tick of execution, then off for all remaining cycles. For init stuff.
 - [ ] Add shift elements, wires that connect diagonally (Ll?), variant 1 connects n-w and s-e, variants 2 connects n-e and s-w
@@ -41,6 +41,7 @@
 - [x] Centralize all registerInternal priorities's, to get rid of magic priorities, just use an ordered list instead
 - [x] Make elements with pollInternal callable
 - [ ] Optimization: Add age to memory, so that it's pollInternal is called once (wait, would this actually be correct?)
+- [ ] Make return value of board.run into a named tuple
 
 # Unclaimed simple ascii
 Ii Qq Rr Uu Ww Yy % & _ "

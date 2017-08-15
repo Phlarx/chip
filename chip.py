@@ -206,10 +206,11 @@ def setup(ospec):
 		status = 0
 		sleep = 0
 		debug = ''
+		jump = None
 		try:
 			while True:
-				inbits = yield (status, outbits, sleep, debug)
-				status, outbits, sleep, debug = board.run(inbits)
+				inbits = yield (status, outbits, sleep, debug, jump)
+				status, outbits, sleep, debug, jump = board.run(inbits)
 		except KeyboardInterrupt as e:
 			if board.debug:
 				for msg in sorted(board.debug):
@@ -250,6 +251,7 @@ def run(circuit, board):
 	total_bytes = 0
 	inchar = bytes([254])
 	history = b''
+	index = 0
 	try:
 		while True:
 			# Read input, plus eof check
@@ -257,27 +259,31 @@ def run(circuit, board):
 				if total_bytes >= Cfg.CUTOFF_BYTES > 0:
 					# we're done here
 					break
-				if Cfg.WITHOUT_STDIN:
-					inchar = next(Cfg.GENERATOR)
+				if index < len(history):
+					inchar = bytes([history[index]]) # need to bytes, otherwise we get an int
 				else:
-					try:
-						if Cfg.NO_BUFFER and stdin.isatty():
-							orig_settings = termios.tcgetattr(stdin)
-							tty.setraw(stdin)
-						inchar = stdin.buffer.read(1)
-					finally:
-						if Cfg.NO_BUFFER and stdin.isatty():
-							termios.tcsetattr(stdin, termios.TCSADRAIN, orig_settings)
-					if len(inchar) == 0:
-						# EOF (optimization: switch to without stdin mode for future)
-						if Cfg.IGNORE_EOF:
-							inchar = next(Cfg.GENERATOR)
-							Cfg.WITHOUT_STDIN = True
-						else:
-							break
-					history += inchar
-					if history.endswith(Cfg.ESC_SEQS):
-						break
+					if Cfg.WITHOUT_STDIN:
+						inchar = next(Cfg.GENERATOR)
+					else:
+						try:
+							if Cfg.NO_BUFFER and stdin.isatty():
+								orig_settings = termios.tcgetattr(stdin)
+								tty.setraw(stdin)
+							inchar = stdin.buffer.read(1)
+						finally:
+							if Cfg.NO_BUFFER and stdin.isatty():
+								termios.tcsetattr(stdin, termios.TCSADRAIN, orig_settings)
+						if len(inchar) == 0:
+							# EOF (optimization: switch to without stdin mode for future)
+							if Cfg.IGNORE_EOF:
+								inchar = next(Cfg.GENERATOR)
+								Cfg.WITHOUT_STDIN = True
+							else:
+								break
+				history += inchar
+				if history.endswith(Cfg.ESC_SEQS):
+					break
+				index += 1
 				total_bytes += 1
 			inbin = bin(ord(inchar))[2:]
 			inbits = list(map(int, '0'*(8-len(inbin)) + inbin))[::-1]
@@ -292,7 +298,7 @@ def run(circuit, board):
 					stderr.write('                  →')
 	
 			# Execute a clock cycle
-			status, outbits, sleep, debug = circuit.send(inbits)
+			status, outbits, sleep, debug, jump = circuit.send(inbits)
 	
 			# Output
 			outchar = bytes([int(''.join(map(str, outbits[::-1])), 2)])
@@ -332,6 +338,14 @@ def run(circuit, board):
 			# Sleep
 			if (sleep):
 				time.sleep(sleep)
+
+			# Jump
+			if (jump is not None):
+				if jump >= 0:
+					index = jump
+				else:
+					index += jump
+
 		if Cfg.VERBOSE > 1:
 			if Cfg.VERBOSE > 2:
 				stderr.write('\n')

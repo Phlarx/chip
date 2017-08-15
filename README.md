@@ -45,6 +45,8 @@ A Chip circuit is made up of the elements described here:
 | <code>$</code>        |   | Sleep; induces a sleep before next cycle, depending on number of sides powered. From zero to four, in seconds: 0, 1/10, 1/4, 1/2, 1. Multiple sleep/pause elements are summed.
 | <code>Pp</code>       |   | Pause; induces a sleep before next cycle, depending on the current stack head. P sleeps for stack_head seconds, p for stack_head/256 seconds. Multiple sleep/pause elements are summed.
 |                       |   |
+| <code>V</code>        |   | Bookmark; when powered, it will mark the current position in input, and when unpowered it will recall to that position
+|                       |   |
 | <code>»</code>        |   | diode; west is in, east is out, north and south ignored; form is (U+00BB)
 | <code>«</code>        |   | diode; horizontally mirrored of above; form is (U+00AB)
 | <code>⌐~</code>       |   | not diode; west is in, east is out, north and south ignored; first form is (U+2310)
