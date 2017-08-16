@@ -35,9 +35,10 @@ class Board(object):
 	MAX_POLL_DEPTH = 256
 	CUR_POLL_DEPTH = 0
 
-	def __init__(self):
+	def __init__(self, cfg):
 		self.cboard = None
 		self.terminals = {cls:set() for cls in PRIORITYLIST}
+		self.storagemode = cfg.STORAGE
 	def __str__(self):
 		if self.initialized():
 			out = ''
@@ -102,10 +103,10 @@ class Board(object):
 		self.outbits = [0]*8
 		self.sleep = 0
 		self.statuscode = 0
-		self.stackctl = {'w':set(), 'r':set()}
-		self.stack = []
-		self.stackheadr = None
-		self.stackheadw = None
+		self.storagectl = {'w':set(), 'r':set()}
+		self.storage = []
+		self.storageheadr = None
+		self.storageheadw = None
 		self.age = 0
 		self.debug = []
 		self.stats = defaultdict(int)
@@ -113,26 +114,48 @@ class Board(object):
 		self.jump = None
 
 		def prepareStack():
-			if self.stack:
+			if self.storage:
 				# Peek at stack to read
-				self.stackheadr = self.stack[-1]
+				self.storageheadr = self.storage[-1]
 			else:
 				# Produce zeroes to read if the stack is empty
-				self.stackheadr = [0]*8
+				self.storageheadr = [0]*8
 			# Create write head unconditionally
-			self.stackheadw = [0]*8
+			self.storageheadw = [0]*8
 		def finalizeStack():
-			if self.getStackControl('r') and self.stack:
+			if self.getStorageControl('r') and self.storage:
 				# If we were reading, not only peeking, actually pop the stack now
-				self.stack.pop()
+				self.storage.pop()
 				self.stats['stack.pop'] += 1
-			if self.getStackControl('w'):
+			if self.getStorageControl('w'):
 				# If we were writing, commit the write head
-				self.stack.append(self.stackheadw)
+				self.storage.append(self.storageheadw)
 				self.stats['stack.push'] += 1
+		def prepareQueue():
+			if self.storage:
+				# Peek at queue to read
+				self.storageheadr = self.storage[0]
+			else:
+				# Produce zeroes to read if the queue is empty
+				self.storageheadr = [0]*8
+			# Create write head unconditionally
+			self.storageheadw = [0]*8
+		def finalizeQueue():
+			if self.getStorageControl('r') and self.storage:
+				# If we were reading, not only peeking, actually pop the queue now
+				self.storage.pop(0)
+				self.stats['queue.pop'] += 1
+			if self.getStorageControl('w'):
+				# If we were writing, commit the write head
+				self.storage.append(self.storageheadw)
+				self.stats['queue.push'] += 1
 
-		self.registerInternal(prepareStack, DummyPrepare)
-		self.registerInternal(finalizeStack, DummyFinalize)
+		if self.storagemode[0] == 's':
+			self.registerInternal(prepareStack, DummyPrepare)
+			self.registerInternal(finalizeStack, DummyFinalize)
+		elif self.storagemode[0] == 'q':
+			self.registerInternal(prepareQueue, DummyPrepare)
+			self.registerInternal(finalizeQueue, DummyFinalize)
 
 	def initialized(self):
 		return self.cboard is not None
@@ -156,10 +179,10 @@ class Board(object):
 		self.outbits = [0]*8
 		self.sleep = 0
 		self.statuscode = 0
-		self.stackctl['w'].clear()
-		self.stackctl['r'].clear()
-		self.stackheadr = None
-		self.stackheadw = None
+		self.storagectl['w'].clear()
+		self.storagectl['r'].clear()
+		self.storageheadr = None
+		self.storageheadw = None
 		self.jump = None
 
 		self.age += 1
@@ -202,28 +225,29 @@ class Board(object):
 					pass
 				else:
 					self.jump = min(self.jump, jump)
+		self.addDebug(' ', 0, 0, 0, 'Setting jump to %d' % (self.jump,))
 
 	def checkStatus(self, statuscode):
 		return self.statuscode & statuscode
 
-	def setStackControl(self, control, controlFlavor, controlValue):
-		"""The two stack controls -- read and write -- are each lists.
+	def setStorageControl(self, control, controlFlavor, controlValue):
+		"""The two storage controls -- read and write -- are each lists.
 		   When the control is set, the setting element is added to
 		   the list, when cleared it is removed. If the list has any
 		   values, its control is considered active."""
 		if controlValue == 1:
-			self.stackctl[controlFlavor].add(control)
+			self.storagectl[controlFlavor].add(control)
 		elif controlValue == 0:
-			self.stackctl[controlFlavor].discard(control)
+			self.storagectl[controlFlavor].discard(control)
 		else:
-			assert 1 == 0, "'%d' is not a valid stack control value" % (controlValue)
-	def getStackControl(self, controlFlavor):
-		return 1 if self.stackctl[controlFlavor] else 0
+			assert 1 == 0, "'%d' is not a valid storage control value" % (controlValue)
+	def getStorageControl(self, controlFlavor):
+		return 1 if self.storagectl[controlFlavor] else 0
 
-	def readStackBit(self, index):
-		return self.stackheadr[index]
-	def writeStackBit(self, index, value):
-		self.stackheadw[index] |= value
+	def readStorageBit(self, index):
+		return self.storageheadr[index]
+	def writeStorageBit(self, index, value):
+		self.storageheadw[index] |= value
 
 class Element(object):
 	lexemes = {}
@@ -677,10 +701,10 @@ class Pause(Element):
 		   self.pollNeighbor('s') or\
 		   self.pollNeighbor('w') or\
 		   self.pollNeighbor('e'):
-			stack_peek = 0
-			for bit in self.board.stackheadr[::-1]:
-				stack_peek = (stack_peek << 1) | bit
-			self.board.addSleep(stack_peek * self.scale)
+			storage_peek = 0
+			for bit in self.board.storageheadr[::-1]:
+				storage_peek = (storage_peek << 1) | bit
+			self.board.addSleep(storage_peek * self.scale)
 
 class Pin(Element):
 	lexemes = 'Oo'
@@ -778,7 +802,7 @@ class Source(Element):
 		else:
 			return None
 
-class StackBit(Element):
+class StorageBit(Element):
 	lexemes = '01234567'
 
 	def __init__(self, board, x, y, z, lexeme):
@@ -787,21 +811,21 @@ class StackBit(Element):
 		board.registerInternal(self)
 
 	def pollInternal(self):
-		if self.board.getStackControl('w'): # this condition is unnecessary, but is for optimization
+		if self.board.getStorageControl('w'): # this condition is unnecessary, but is for optimization
 			value = (0 if self.neighborType('n') == self.__class__ else self.pollNeighbor('n')) or\
 			        (0 if self.neighborType('s') == self.__class__ else self.pollNeighbor('s')) or\
 			        (0 if self.neighborType('w') == self.__class__ else self.pollNeighbor('w')) or\
 			        (0 if self.neighborType('e') == self.__class__ else self.pollNeighbor('e'))
-			self.board.writeStackBit(self.index, value)
+			self.board.writeStorageBit(self.index, value)
 
 	def poll(self, side):
 		if side in 'nswe':
-			value = self.board.readStackBit(self.index)
+			value = self.board.readStorageBit(self.index)
 			return value
 		else:
 			return None
 
-class StackControl(Element):
+class StorageControl(Element):
 	lexemes = {'9':('w','9'), '8':('r','8')}
 
 	def __init__(self, board, x, y, z, lexeme):
@@ -821,7 +845,7 @@ class StackControl(Element):
 		        self.pollNeighbor('s') or\
 		        self.pollNeighbor('w') or\
 		        self.pollNeighbor('e')
-		self.board.setStackControl(self, self.flavor, value)
+		self.board.setStorageControl(self, self.flavor, value)
 
 class Switch(Element):
 	lexemes = {'/':(1,'/'), '\\':(0,'\\')}
@@ -942,8 +966,8 @@ class DummyFinalize(object):
 	pass
 
 PRIORITYLIST = [DummyPrepare,
-		StackControl,
-		StackBit,
+		StorageControl,
+		StorageBit,
 		Memory,
 		Sleep,
 		Pause,

@@ -1,4 +1,9 @@
-= note, this needs to either be given a null terminator, or the -z flag
+:
+Reverses the input string, byte-by-byte, using the stack.
+This needs to either be given a null terminator, or the -z flag.
+If set to queued mode via -mq, this will behave like cat instead.
+;
+=
 ))))))))-vv~vv.
 ABCDEFGH 9S |8s
 01234567 ,--'

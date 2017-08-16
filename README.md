@@ -20,9 +20,9 @@ A Chip circuit is made up of the elements described here:
 | <code>HGFEDCBA</code> |   | 8 bits of the input data; A is LSbit; value given on all sides; may be used multiple times; when input is exhausted, program terminates (end identifier like NUL is recommended for programs that need to continue after input is done)
 | <code>hgfedbca</code> |   | 8 bits of output data; a is LSbit; value is taken from all sides; may be used multiple times (as usual, all sides/uses are or'd before output)
 |                       |   |
-| <code>76543210</code> |   | 8 bits wide stack memory; inactive without 89 controls (produces lows); when both read and write are high behaves like Zz; unable to read or write to another stack bit directly
-| <code>8</code>        |   | Stack read memory control; when given high stack is in read state; not altered by Ss controls; reading an empty stack produces lows; if not set, stack can still be read, but won't be popped this cycle
-| <code>9</code>        |   | Stack write memory control; when given high stack is in write state; not altered by Ss controls
+| <code>76543210</code> |   | 8 bits wide storage memory; inactive without 89 controls (produces lows); when both read and write are high behaves like Zz; unable to read or write to another storage bit directly, use wires if that is desired behavior
+| <code>8</code>        |   | Storage read memory control; when given high storage is in read state; not altered by Ss controls; reading an empty stack/queue produces lows; if not set, stack/queue can still be read, but won't be popped this cycle
+| <code>9</code>        |   | Storage write memory control; when given high storage is in write state; not altered by Ss controls
 |                       |   |
 | <code>┼+</code>       |   | wire; connect on all sides; first form is (U+253C)
 | <code>─-</code>       |   | wire; horizontal connect only; first form is (U+2500)
@@ -43,7 +43,7 @@ A Chip circuit is made up of the elements described here:
 | <code>!</code>        |   | Pulse; produces a 1-tick pulse on the first cycle; useful for init tasks
 |                       |   |
 | <code>$</code>        |   | Sleep; induces a sleep before next cycle, depending on number of sides powered. From zero to four, in seconds: 0, 1/10, 1/4, 1/2, 1. Multiple sleep/pause elements are summed.
-| <code>Pp</code>       |   | Pause; induces a sleep before next cycle, depending on the current stack head. P sleeps for stack_head seconds, p for stack_head/256 seconds. Multiple sleep/pause elements are summed.
+| <code>Pp</code>       |   | Pause; induces a sleep before next cycle, depending on the current storage read head. P sleeps for storage_head seconds, p for storage_head/256 seconds. Multiple sleep/pause elements are summed.
 |                       |   |
 | <code>V</code>        |   | Bookmark; when powered, it will mark the current position in input, and when unpowered it will recall to that position
 |                       |   |

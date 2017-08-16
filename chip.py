@@ -7,7 +7,7 @@ VERSION = '0.1.5'
 
 from sys import argv, stdin, stdout, stderr, exit
 from getopt import getopt, GetoptError
-from argparse import ArgumentParser, RawDescriptionHelpFormatter
+from argparse import ArgumentParser, ArgumentTypeError, RawDescriptionHelpFormatter
 
 import random, time, termios, tty
 import chiplib
@@ -27,33 +27,41 @@ Cfg = ConfigDict(
 	IGNORE_EOF=False,
 	NEWLINE=False,
 	NO_BUFFER=False,
+	STORAGE=None,
 	VERBOSE=False,
 	WITHOUT_STDIN=False
 )
 
 def prepareGenerator(template):
 	def inputGenerator():
+		digits = '0123456789ABCDEF'
 		age = 0
 		while(True):
 			value = list(template.upper())
 
 			if value[0] == 'I':
-				value[0] = '0123456789ABCDEF'[(age >> 4) & 15]
+				value[0] = digits[(age >> 4) & 15]
 			elif value[0] == 'J':
-				value[0] = '0123456789ABCDEF'[~((age >> 4) & 15)]
+				value[0] = digits[~((age >> 4) & 15)]
 			elif value[0] == 'K':
-				value[0] = random.choice('0123456789ABCDEF')
+				value[0] = random.choice(digits)
 
 			if value[1] == 'I':
-				value[1] = '0123456789ABCDEF'[age & 15]
+				value[1] = digits[age & 15]
 			elif value[1] == 'J':
-				value[1] = '0123456789ABCDEF'[~(age & 15)]
+				value[1] = digits[~(age & 15)]
 			elif value[1] == 'K':
-				value[1] = random.choice('0123456789ABCDEF')
+				value[1] = random.choice(digits)
 
 			yield bytes([int(''.join(value), 16)])
 			age = (age + 1) % 256
 	return inputGenerator()
+
+def prepareStorage(mode):
+	valid_modes = {'q', 's'} # 'm' not yet implemented, will need 2 heads. Ditto for 'ss', 'qq', 'qs', and 'sq'.
+	if not (set(mode) <= valid_modes):
+		raise ArgumentTypeError("'%s' is not a valid storage mode. Valid modes are: %s" % (mode, str(valid_modes).strip('{}')))
+	return mode
 
 def init():
 	"""Perform initialization tasks"""
@@ -84,11 +92,14 @@ def init():
 	parser.add_argument('-i', '--immediate', action='store_true', dest='no_buffer', default=False, help='Flushes stdout immediately '+
 	                                         'after each cycle, otherwise, default buffering is used. Also sets input to raw mode, '+
 	                                         'rather than cbreak mode.')
+	parser.add_argument('-m', '--storage-mode', action='store', dest='storage', default='s', type=prepareStorage, metavar='MODE',
+	                                            help="Set the storage to this mode. 's' means stack, 'q' means queue, 'm' "+
+	                                            'means addressed memory (not yet implemented). Stack is the default mode.')
 	parser.add_argument('-n', '--extra-newline', action='store_true', dest='extra_newline', default=False, help='Provides an extra '+
 	                                             'newline to stdout at the end of execution regardless of the method of termination.')
-	parser.add_argument('-o', '--generate-one', action='store_const', dest='generator', const='FF', help='When input is exhausted, '+
-	                                            'instead of terminating, generate one values (0xff) until the circuit terminates '+
-	                                            'itself. Equivalent to --generate=FF.')
+	parser.add_argument('-o', '--generate-ones', action='store_const', dest='generator', const='FF', help='When input is exhausted, '+
+	                                             'instead of terminating, generate one values (0xff) until the circuit terminates '+
+	                                             'itself. Equivalent to --generate=FF.')
 	parser.add_argument('-v', '--verbose', action='count', dest='verbose', default=0, help='Enables verbose output; effect is '+
 	                                       'cumulative. Level 1 shows input/output for each cycle. Level 2 adds the parsed '+
 	                                       'circuitry and statistics. Level 3 shows a heatmap (using ANSI colors).')
@@ -97,9 +108,9 @@ def init():
 	parser.add_argument('-w', '--without-stdin', action='store_true', dest='without', default=False, help='The program uses the '+
 	                                             'default value (set by --generate), instead of reading from STDIN. By itself, '+
 	                                             'implies --generate=00.')
-	parser.add_argument('-z', '--generate-zero', action='store_const', dest='generator', const='00', help='When input is exhausted, '+
-	                                             'instead of terminating, generate zero values (0x00) until the circuit terminates '+
-	                                             'itself. Equivalent to --generate=00.')
+	parser.add_argument('-z', '--generate-zeroes', action='store_const', dest='generator', const='00', help='When input is '+
+	                                               'exhausted, instead of terminating, generate zero values (0x00) until the circuit '+
+	                                               'terminates itself. Equivalent to --generate=00.')
 	args = parser.parse_args()
 
 	if args.without and not args.generator:
@@ -110,6 +121,7 @@ def init():
 	Cfg.GENERATOR = prepareGenerator(args.generator)
 	Cfg.NEWLINE = args.extra_newline
 	Cfg.NO_BUFFER = args.no_buffer
+	Cfg.STORAGE = args.storage
 	Cfg.VERBOSE = args.verbose
 	Cfg.WITHOUT_STDIN = args.without
 
@@ -195,7 +207,7 @@ def setup(ospec):
 	n = max(map(lambda s:max(map(len, s)), spec2))
 	spec2 = list(map(lambda s:list(map(lambda t:list(t+(' '*(n-len(t)))), s)), spec2))
 
-	board = chiplib.Board()
+	board = chiplib.Board(Cfg)
 	board.initialize([[[chiplib.getElementType(char)(board, x, y, z, char) for x,char in enumerate(row)] for y,row in enumerate(layer)] for z,layer in enumerate(spec2)])
 	if Cfg.VERBOSE > 1:
 		stderr.write(str(board) + '\n')
@@ -217,14 +229,16 @@ def setup(ospec):
 					stderr.write('\n\t\t\t\t\t%s(%d,%d,%d): %s' % msg)
 			if Cfg.VERBOSE > 2:
 				stderr.write('\n' + board.heatmap())
-			stderr.write('\nStack: ')
-			if board.stack:
-				if Cfg.VERBOSE > 1 or len(board.stack) < 9:
-					stderr.write(' '.join(map(lambda v:''.join(map(str, v[::-1])), board.stack[::-1])))
+			stderr.write('\nStack: ' if Cfg.STORAGE[0] == 's' else '\nQueue: ')
+			if board.storage:
+				dir = -1 if Cfg.STORAGE[0] == 's' else 1
+				if Cfg.VERBOSE > 1 or len(board.storage) < 9:
+					stderr.write(' '.join(map(lambda v:''.join(map(str, v[::-1])), board.storage[::dir])))
 				else:
-					stderr.write(' '.join(map(lambda v:''.join(map(str, v[::-1])), board.stack[:-9:-1])))
+					cut = -9 if Cfg.STORAGE[0] == 's' else 8
+					stderr.write(' '.join(map(lambda v:''.join(map(str, v[::-1])), board.storage[:cut:dir])))
 					stderr.write(' ... ')
-					stderr.write(str(len(board.stack)-8))
+					stderr.write(str(len(board.storage)-8))
 					stderr.write('more')
 			else:
 				stderr.write('empty')
@@ -315,14 +329,16 @@ def run(circuit, board):
 					if debug:
 						for msg in sorted(debug):
 							stderr.write('\n\t\t\t\t\t%s(%d,%d,%d): %s' % msg)
-					if board.stack:
-						stderr.write('\n\t\t\t\t\tStack: ')
-						if len(board.stack) < 9:
-							stderr.write(' '.join(map(lambda v:''.join(map(str, v[::-1])), board.stack[::-1])))
+					if board.storage:
+						stderr.write('\n\t\t\t\t\tStack: ' if Cfg.STORAGE[0] == 's' else '\n\t\t\t\t\tQueue: ')
+						dir = -1 if Cfg.STORAGE[0] == 's' else 1
+						if len(board.storage) < 9 or Cfg.VERBOSE > 2:
+							stderr.write(' '.join(map(lambda v:''.join(map(str, v[::-1])), board.storage[::dir])))
 						else:
-							stderr.write(' '.join(map(lambda v:''.join(map(str, v[::-1])), board.stack[:-9:-1])))
+							cut = -9 if Cfg.STORAGE[0] == 's' else 8
+							stderr.write(' '.join(map(lambda v:''.join(map(str, v[::-1])), board.storage[:cut:dir])))
 							stderr.write(' ... ')
-							stderr.write(str(len(board.stack)-8))
+							stderr.write(str(len(board.storage)-8))
 							stderr.write('more')
 				stderr.write('\n')
 
