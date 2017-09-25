@@ -546,7 +546,7 @@ class Delay(Element):
 			return None
 
 class Diode(Element):
-	lexemes = {'»':('ew','»'), '«':('we','«')}
+	lexemes = {'→':('we','→'), '←':('ew','←'), '↓':('ns','↓'), '↑':('sn','↑')}
 
 	def __init__(self, board, x, y, z, lexeme):
 		self.flavor, lex = self.__class__.getFlavor(lexeme)
@@ -560,8 +560,8 @@ class Diode(Element):
 			raise KeyError("'%s' is not a valid lexeme for a %s element" % (lexeme, cls.__name__))
 
 	def poll(self, side):
-		if side == self.flavor[0]:
-			return self.pollNeighbor(self.flavor[1])
+		if side == self.flavor[1]:
+			return self.pollNeighbor(self.flavor[0])
 		else:
 			return None
 
@@ -912,21 +912,24 @@ class Wire(Element):
 		else:
 			return None
 
-class WireCross(Element):
-	lexemes = '×x'
+class WireSpecial(Element):
+	lexemes = {'×x': ('nsew','×'), '«L':('nwse','«'), '»R':('nesw','»')}
 
 	def __init__(self, board, x, y, z, lexeme):
-		Element.__init__(self, board, x, y, z, self.lexemes[0])
+		self.flavor, lex = self.__class__.getFlavor(lexeme)
+		Element.__init__(self, board, x, y, z, lex)
+
+	@classmethod
+	def getFlavor(cls, lexeme):
+		for key in cls.lexemes:
+			if lexeme in key:
+				return cls.lexemes[key]
+		else:
+			raise KeyError("'%s' is not a valid lexeme for a %s element" % (lexeme, cls.__name__))
 
 	def poll(self, side):
-		if side == 'n':
-			return self.pollNeighbor('s')
-		elif side == 's':
-			return self.pollNeighbor('n')
-		elif side == 'w':
-			return self.pollNeighbor('e')
-		elif side == 'e':
-			return self.pollNeighbor('w')
+		if side in self.flavor:
+			return self.pollNeighbor(self.flavor[self.flavor.index(side) ^ 1])
 		else:
 			return None
 

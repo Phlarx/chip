@@ -22,7 +22,7 @@
 - [x] Add bookmarking/looping, (V?) when marker is powered it marks a jump-back point. When unpowered, jumps to that point. Multiple may be used, also, may jump forward if previously jumped back
 - [x] Optimization: In case of output suppression S, skip polling output bit elements, since they become unnecessary
 - [x] Add pulse element (!?), on for first tick of execution, then off for all remaining cycles. For init stuff.
-- [ ] Add shift elements, wires that connect diagonally (Ll?), variant 1 connects n-w and s-e, variants 2 connects n-e and s-w
+- [x] Add shift elements, wires that connect diagonally (LR?), variant 1 connects n-w and s-e, variants 2 connects n-e and s-w
 - [x] Change stack to have a split head, one for reading, and one for writing
 - [ ] Maybe: Add second stack (with unicode numberish elements?) (also second queue, and mixed queue+stack / stack+queue)
 - [X] Maybe: Add queue mode instead of stack mode (two queues? queue+stack?)
@@ -44,4 +44,4 @@
 - [ ] Make return value of board.run into a named tuple
 
 # Unclaimed simple ascii
-Ii Qq Rr Uu Ww Yy % & _ "
+Ii Qq l r Uu Ww Yy % & _ "

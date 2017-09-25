@@ -47,8 +47,9 @@ A Chip circuit is made up of the elements described here:
 |                       |   |
 | <code>V</code>        |   | Bookmark; when powered, it will mark the current position in input, and when unpowered it will recall to that position
 |                       |   |
-| <code>»</code>        |   | diode; west is in, east is out, north and south ignored; form is (U+00BB)
-| <code>«</code>        |   | diode; horizontally mirrored of above; form is (U+00AB)
+| <code>←↑→↓</code>     |   | diode; tail is in, head is out, other sides ignored; forms are (U+2190, U+2191, U+2192, U+2193)
+| <code>L«</code>       |   | shift left; north connects to west, south connects to east; form is (U+00AB)
+| <code>R»</code>       |   | shift right; north connects to east, south connects to west; form is (U+00BB)
 | <code>⌐~</code>       |   | not diode; west is in, east is out, north and south ignored; first form is (U+2310)
 | <code>¬÷</code>       |   | not diode; horizontally mirrored of above; first form is (U+00AC); second form is (U+00F7)
 | <code>]</code>        | * | and; west, north/south are in, east is out
