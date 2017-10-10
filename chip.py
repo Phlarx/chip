@@ -214,18 +214,18 @@ def setup(ospec):
 
 	def circuit_gen():
 		"""A generator representing the board's state and function"""
-		outbits = None
-		status = 0
-		sleep = 0
-		debug = ''
-		jump = None
+		result = chiplib.RunResult(statuscode=0,
+		                           outbits=None,
+		                           sleep=0,
+		                           debug='',
+		                           jump=None)
 		try:
 			while True:
-				inbits = yield (status, outbits, sleep, debug, jump)
-				status, outbits, sleep, debug, jump = board.run(inbits)
+				inbits = yield result
+				result = board.run(inbits)
 		except KeyboardInterrupt as e:
-			if board.debug:
-				for msg in sorted(board.debug):
+			if result.debug:
+				for msg in sorted(result.debug):
 					stderr.write('\n\t\t\t\t\t%s(%d,%d,%d): %s' % msg)
 			if Cfg.VERBOSE > 2:
 				stderr.write('\n' + board.heatmap())
@@ -249,7 +249,7 @@ def setup(ospec):
 				for k,v in sorted(board.stats.items()):
 					stderr.write('\n%s %s' % (str(v).rjust(24), k))
 			stderr.write('\n')
-			#raise e # Uncomment this for a stack trace. Usually *very* long.
+			#raise e # Uncomment this for a stack trace upon ^C. Usually *very* long.
 
 	# Start up the circuit
 	circuit = circuit_gen()
@@ -310,24 +310,24 @@ def run(circuit, board):
 					stderr.write('     %s\t%s  →' % (inc, ''.join(map(str, inbits[::-1]))))
 				else:
 					stderr.write('                  →')
-	
+
 			# Execute a clock cycle
-			status, outbits, sleep, debug, jump = circuit.send(inbits)
-	
+			result = circuit.send(inbits)
+
 			# Output
-			outchar = bytes([int(''.join(map(str, outbits[::-1])), 2)])
+			outchar = bytes([int(''.join(map(str, result.outbits[::-1])), 2)])
 			if Cfg.VERBOSE > 0:
-				if not (status & chiplib.Board.WRITE_HOLD):
+				if not (result.statuscode & chiplib.Board.WRITE_HOLD):
 					if 0 <= outchar[0] < 32 or outchar[0] == 127:
 						outc = '�'
 					else:
 						outc = outchar.decode('utf-8', 'replace')
-					stderr.write('  %s\t%s' % (outc, ''.join(map(str, outbits[::-1]))))
+					stderr.write('  %s\t%s' % (outc, ''.join(map(str, result.outbits[::-1]))))
 				else:
 					stderr.write('             ')
 				if Cfg.VERBOSE > 1:
-					if debug:
-						for msg in sorted(debug):
+					if result.debug:
+						for msg in sorted(result.debug):
 							stderr.write('\n\t\t\t\t\t%s(%d,%d,%d): %s' % msg)
 					if board.storage:
 						stderr.write('\n\t\t\t\t\tStack: ' if Cfg.STORAGE[0] == 's' else '\n\t\t\t\t\tQueue: ')
@@ -342,25 +342,25 @@ def run(circuit, board):
 							stderr.write('more')
 				stderr.write('\n')
 
-			if not (status & chiplib.Board.WRITE_HOLD):
+			if not (result.statuscode & chiplib.Board.WRITE_HOLD):
 				stdout.buffer.write(outchar)
 				if Cfg.NO_BUFFER:
 					stdout.flush()
-	
+
 			# Early termination
-			if (status & chiplib.Board.TERMINATE):
+			if (result.statuscode & chiplib.Board.TERMINATE):
 				break
 
 			# Sleep
-			if (sleep):
-				time.sleep(sleep)
+			if (result.sleep):
+				time.sleep(result.sleep)
 
 			# Jump
-			if (jump is not None):
-				if jump >= 0:
-					index = jump
+			if (result.jump is not None):
+				if result.jump >= 0:
+					index = result.jump
 				else:
-					index += jump
+					index += result.jump
 
 		if Cfg.VERBOSE > 1:
 			if Cfg.VERBOSE > 2:

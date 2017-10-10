@@ -4,7 +4,7 @@
 #interpreter v0.1.5
 
 import random, subprocess, sys
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 
 # Determine window width
 if sys.version_info[1] >= 3: # Python 3.3+
@@ -23,6 +23,8 @@ oppositeDir = {
 		'd':'u'
 	}
 
+RunResult = namedtuple('RunResult', ['statuscode', 'outbits', 'sleep', 'debug', 'jump'])
+
 ###                         ###
 #   Start class definitions   #
 ###                         ###
@@ -32,7 +34,6 @@ class Board(object):
 	WRITE_HOLD = 0x2
 	TERMINATE = 0x4
 
-	MAX_POLL_DEPTH = 256
 	CUR_POLL_DEPTH = 0
 
 	def __init__(self, cfg):
@@ -191,7 +192,11 @@ class Board(object):
 			for element in self.terminals[cls]:
 				element()
 
-		return (self.statuscode, self.outbits, self.sleep, self.debug, self.jump)
+		return RunResult(statuscode=self.statuscode,
+		                 outbits=self.outbits,
+		                 sleep=self.sleep,
+		                 debug=self.debug,
+		                 jump=self.jump)
 
 	def readBit(self, index):
 		return self.inbits[index]
@@ -333,7 +338,7 @@ class Element(object):
 		neighbor = self.getNeighbor(dir)
 		if neighbor is not None:
 			self.board.stats['poll.neighbor'] += 1
-			if Board.CUR_POLL_DEPTH < Board.MAX_POLL_DEPTH:
+			try:
 				Board.CUR_POLL_DEPTH += 1
 				value = neighbor.poll(oppositeDir[dir])
 				if value is None:
@@ -342,7 +347,7 @@ class Element(object):
 					neighbor.calls += 1
 				Board.CUR_POLL_DEPTH -= 1
 				return value
-			else:
+			except RecursionError as e:
 				# Soft recursion limit reached
 				self.board.stats['poll.overflow'] += 1
 				self.addDebug('Giving up due to stack overflow')

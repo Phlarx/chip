@@ -25,7 +25,7 @@
 - [x] Add shift elements, wires that connect diagonally (LR?), variant 1 connects n-w and s-e, variants 2 connects n-e and s-w
 - [x] Change stack to have a split head, one for reading, and one for writing
 - [ ] Maybe: Add second stack (with unicode numberish elements?) (also second queue, and mixed queue+stack / stack+queue)
-- [X] Maybe: Add queue mode instead of stack mode (two queues? queue+stack?)
+- [x] Maybe: Add queue mode instead of stack mode (two queues? queue+stack?)
 - [ ] Maybe: Add addressed memory mode instead of stack mode (using second stack elements as addressors?)
 - [ ] Maybe: Add edge detector(s) (Nn?), on for only one tick when signal changes
 - [ ] Add jumpers (jJ?) to connect anywhere within current layer
@@ -41,7 +41,7 @@
 - [x] Centralize all registerInternal priorities's, to get rid of magic priorities, just use an ordered list instead
 - [x] Make elements with pollInternal callable
 - [ ] Optimization: Add age to memory elements, so that it's pollInternal is called once (wait, would this actually be correct?)
-- [ ] Make return value of board.run into a named tuple
+- [x] Make return value of board.run into a named tuple
 
 # Unclaimed simple ascii
 Ii Qq l r Uu Ww Yy % & _ "
