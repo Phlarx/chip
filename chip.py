@@ -261,7 +261,7 @@ def run(circuit, board):
 	"""Run the circuit for each input byte"""
 	if Cfg.VERBOSE > 0:
 		stderr.write('        HGFEDCBA        hgfedcba\n')
-	status = 0
+	result = chiplib.EMPTY_RUN_RESULT
 	total_bytes = 0
 	inchar = bytes([254])
 	history = b''
@@ -269,7 +269,7 @@ def run(circuit, board):
 	try:
 		while True:
 			# Read input, plus eof check
-			if not (status & chiplib.Board.READ_HOLD):
+			if not (result.statuscode & chiplib.Board.READ_HOLD):
 				if total_bytes >= Cfg.CUTOFF_BYTES > 0:
 					# we're done here
 					break
@@ -302,7 +302,7 @@ def run(circuit, board):
 			inbin = bin(ord(inchar))[2:]
 			inbits = list(map(int, '0'*(8-len(inbin)) + inbin))[::-1]
 			if Cfg.VERBOSE > 0:
-				if not (status & chiplib.Board.READ_HOLD):
+				if not (result.statuscode & chiplib.Board.READ_HOLD):
 					if 0 <= inchar[0] < 32 or inchar[0] == 127:
 						inc = '�'
 					else:

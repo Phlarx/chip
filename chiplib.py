@@ -24,6 +24,7 @@ oppositeDir = {
 	}
 
 RunResult = namedtuple('RunResult', ['statuscode', 'outbits', 'sleep', 'debug', 'jump'])
+EMPTY_RUN_RESULT = RunResult(0, [0]*8, 0, [], None)
 
 ###                         ###
 #   Start class definitions   #

@@ -27,7 +27,7 @@
 - [ ] Maybe: Add second stack (with unicode numberish elements?) (also second queue, and mixed queue+stack / stack+queue)
 - [x] Maybe: Add queue mode instead of stack mode (two queues? queue+stack?)
 - [ ] Maybe: Add addressed memory mode instead of stack mode (using second stack elements as addressors?)
-- [ ] Maybe: Add edge detector(s) (Nn?), on for only one tick when signal changes
+- [ ] Maybe: Add edge detector(s) (Nn?), on for only one tick when signal changes... rising/falling, left/right, ...?
 - [ ] Add jumpers (jJ?) to connect anywhere within current layer
 - [x] Add caching/once-only elements (Kk?) that only poll neighbors once per cycle
 - [x] BUG: empty spec is an error, but because of index error -- allow empties
@@ -42,6 +42,7 @@
 - [x] Make elements with pollInternal callable
 - [ ] Optimization: Add age to memory elements, so that it's pollInternal is called once (wait, would this actually be correct?)
 - [x] Make return value of board.run into a named tuple
+- [ ] Asynchronous input (run ticks w/o input, but still allow input) (needs dead values, probably set by -g?) (settable tick speed, or must do so inside program?)
 
 # Unclaimed simple ascii
 Ii Qq l r Uu Ww Yy % & _ "
